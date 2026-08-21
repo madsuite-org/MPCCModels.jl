@@ -6,7 +6,7 @@
     s.t. lbc ≤ c(x) ≤ ubc
          lbG ≤ G(x) ⟂ H(x) ≥ lbH
 
-  where G(x) and H(x) are defined by index sets into the x and c(x) of an nlp of the from:
+  where G(x) and H(x) are defined by index sets into the x and c(x) of an NLP of the from:
 
     min f(x)
     s.t. lbc ≤ c(x) ≤ ubc
@@ -32,7 +32,7 @@ end
      s.t. lbc ≤ c(w) ≤ ubc
           lbx₁ ≤ x₁ ⟂x₂ ≥ lbx₂
 
-  where x₁ and x₂ are defined by index sets ind_vcc1 and ind_vcc2.
+  where x₁ and x₂ are defined by index sets `ind_vcc1` and `ind_vcc2`.
 """
 function MPCCModel(
     nlp::AbstractNLPModel{T, VT},
@@ -404,7 +404,8 @@ end
 
 ######################### Vertical Form Conversion #########################
 """
-  "Verticalize" a generic MPCC by lifting the nonscalar compenents of ``G(x)`` and ``H(x)``.
+  "Verticalize" a generic MPCC by lifting the nonscalar components of ``G(x)`` and ``H(x)``
+  with two slacks ``s_1`` and ``s_2``.
 """
 function vertical_form(mpcc::AbstractMPCCModel)
     ind_var1 = [

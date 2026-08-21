@@ -1,7 +1,7 @@
 """
   Lifted NLP model which applies lifting to given indices of the nonlinear constraints.
-  Currently takes a parent model and a list of indicies of constraints that should be Lifted.
-  The lifting variables then take on the bounds of the original
+  Currently takes a parent model and a list of indices of constraints that should be lifted.
+  The lifted variables inherit the bounds of the original constraints.
 """
 ######################### Metadata Definition #########################
 struct LiftedNLPModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
