@@ -4,8 +4,7 @@
   The lifting variables then take on the bounds of the original
 """
 ######################### Metadata Definition #########################
-struct LiftedNLPModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
-       AbstractNLPModelMeta{T, VT}
+struct LiftedNLPModelMeta{T,VT,MT<:AbstractNLPModelMeta{T,VT}} <: AbstractNLPModelMeta{T,VT}
     parent::MT
 
     ind_lift::IndexSet
@@ -20,18 +19,18 @@ struct LiftedNLPModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
 end
 
 ######################### LiftedNLPModel Definition #########################
-struct LiftedNLPModel{T, VT, NLP <: AbstractNLPModel{T, VT}, NMT} <: AbstractNLPModel{T, VT}
+struct LiftedNLPModel{T,VT,NLP<:AbstractNLPModel{T,VT},NMT} <: AbstractNLPModel{T,VT}
     nlp::NLP
 
-    meta::LiftedNLPModelMeta{T, VT, NMT}
+    meta::LiftedNLPModelMeta{T,VT,NMT}
     counters::NLPModels.Counters
 end
 
 function LiftedNLPModel(nlp::AbstractNLPModel, ind_lift::IndexSet)
     # Get indicies for lin/nln
     # TODO(@anton) Perhaps warn if lifting linear constraints
-    ind_lin_lift::IndexSet = [i for i in 1:get_nlin(nlp) if get_lin(nlp)[i] ∈ ind_lift]
-    ind_nln_lift::IndexSet = [i for i in 1:get_nnln(nlp) if get_nln(nlp)[i] ∈ ind_lift]
+    ind_lin_lift::IndexSet = [i for i = 1:get_nlin(nlp) if get_lin(nlp)[i] ∈ ind_lift]
+    ind_nln_lift::IndexSet = [i for i = 1:get_nnln(nlp) if get_nln(nlp)[i] ∈ ind_lift]
 
     # number of lifting variables
     nlift = length(ind_lift)
@@ -41,9 +40,9 @@ function LiftedNLPModel(nlp::AbstractNLPModel, ind_lift::IndexSet)
 
     ind_lift_var = collect((get_nvar(nlp)+1):(get_nvar(nlp)+nlift))
     ind_lin_lift_var::IndexSet =
-        [get_nvar(nlp)+i for i in 1:nlift if ind_lift[i] ∈ get_lin(nlp)]
+        [get_nvar(nlp)+i for i = 1:nlift if ind_lift[i] ∈ get_lin(nlp)]
     ind_nln_lift_var::IndexSet =
-        [get_nvar(nlp)+i for i in 1:nlift if ind_lift[i] ∈ get_nln(nlp)]
+        [get_nvar(nlp)+i for i = 1:nlift if ind_lift[i] ∈ get_nln(nlp)]
 
     # add variable bounds for slacks and set initial value to the residual
     lvar = vcat(get_lvar(nlp), get_lcon(nlp)[ind_lift])
@@ -64,15 +63,15 @@ function LiftedNLPModel(nlp::AbstractNLPModel, ind_lift::IndexSet)
 
     parent_meta = NLPModels.NLPModelMeta(
         nlp.meta,
-        nvar=nvar,
-        lcon=lcon,
-        ucon=ucon,
-        lvar=lvar,
-        uvar=uvar,
-        x0=x0,
-        nnzj=nnzj,
-        nln_nnzj=nln_nnzj,
-        lin_nnzj=lin_nnzj,
+        nvar = nvar,
+        lcon = lcon,
+        ucon = ucon,
+        lvar = lvar,
+        uvar = uvar,
+        x0 = x0,
+        nnzj = nnzj,
+        nln_nnzj = nln_nnzj,
+        lin_nnzj = lin_nnzj,
     )
 
     meta = LiftedNLPModelMeta(
@@ -129,7 +128,7 @@ function NLPModels.jac_structure!(
 )
     @views jac_structure!(lnlp.nlp, rows[1:get_nnzj(lnlp.nlp)], cols[1:get_nnzj(lnlp.nlp)]) # get including complementarities
 
-    for i in 1:get_nlift(lnlp)
+    for i = 1:get_nlift(lnlp)
         rows[i+get_nnzj(lnlp.nlp)] = get_ind_lift(lnlp)[i]
         cols[i+get_nnzj(lnlp.nlp)] = get_ind_lift_var(lnlp)[i]
     end
@@ -147,7 +146,7 @@ function NLPModels.jac_lin_structure!(
         cols[1:get_lin_nnzj(lnlp.nlp)],
     ) # get including complementarities
 
-    for i in 1:get_lin_nlift(lnlp)
+    for i = 1:get_lin_nlift(lnlp)
         rows[i+get_lin_nnzj(lnlp.nlp)] = get_ind_lin_lift(lnlp)[i]
         cols[i+get_lin_nnzj(lnlp.nlp)] = get_ind_lin_lift_var(lnlp)[i]
     end
@@ -165,7 +164,7 @@ function NLPModels.jac_nln_structure!(
         cols[1:get_nln_nnzj(lnlp.nlp)],
     )
 
-    for i in 1:get_nln_nlift(lnlp)
+    for i = 1:get_nln_nlift(lnlp)
         rows[i+get_nln_nnzj(lnlp.nlp)] = get_ind_nln_lift(lnlp)[i]
         cols[i+get_nln_nnzj(lnlp.nlp)] = get_ind_nln_lift_var(lnlp)[i]
     end
@@ -273,36 +272,36 @@ function NLPModels.hess_structure!(
 end
 
 function NLPModels.hess_coord!(
-    lnlp::LiftedNLPModel{T, VT},
+    lnlp::LiftedNLPModel{T,VT},
     x::AbstractVector{T},
     y::AbstractVector{T},
     H::AbstractVector{T};
-    obj_weight::Real=one(T),
-) where {T, VT}
+    obj_weight::Real = one(T),
+) where {T,VT}
     return @views hess_coord!(
         lnlp.nlp,
         x[1:get_nvar(lnlp.nlp)],
         y,
         H;
-        obj_weight=obj_weight,
+        obj_weight = obj_weight,
     )
 end
 
 function NLPModels.hprod!(
-    lnlp::LiftedNLPModel{T, VT},
+    lnlp::LiftedNLPModel{T,VT},
     x::AbstractVector{T},
     y::AbstractVector{T},
     v::AbstractVector{T},
     Hv::AbstractVector;
-    obj_weight::Real=one(T),
-) where {T, VT}
+    obj_weight::Real = one(T),
+) where {T,VT}
     @views hprod!(
         lnlp.nlp,
         x[1:get_nvar(lnlp.nlp)],
         y,
         v[1:get_nvar(lnlp.nlp)],
         Hv[1:get_nvar(lnlp.nlp)];
-        obj_weight=obj_weight,
+        obj_weight = obj_weight,
     )
     Hv[(get_nvar(lnlp.nlp)+1):get_nvar(lnlp)] .= 0
     return Hv

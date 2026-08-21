@@ -1,5 +1,4 @@
-struct MPCCModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
-    AbstractNLPModelMeta{T, VT}
+struct MPCCModelMeta{T,VT,MT<:AbstractNLPModelMeta{T,VT}} <: AbstractNLPModelMeta{T,VT}
     nlp_meta::Base.RefValue{MT}
 
     ncc::Int
@@ -36,11 +35,11 @@ struct MPCCModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
     ind_j_nln_triplets::IndexSet
     ind_j_comp_left_triplets::IndexSet
     ind_j_comp_right_triplets::IndexSet
-    ind_j_comp_left_row_map::Dict{Int, Int}
-    ind_j_comp_right_row_map::Dict{Int, Int}
+    ind_j_comp_left_row_map::Dict{Int,Int}
+    ind_j_comp_right_row_map::Dict{Int,Int}
 
-    ind_j_lin_row_map::Dict{Int, Int}
-    ind_j_nln_row_map::Dict{Int, Int}
+    ind_j_lin_row_map::Dict{Int,Int}
+    ind_j_nln_row_map::Dict{Int,Int}
 end
 
 ######################## Typed gets #######################
