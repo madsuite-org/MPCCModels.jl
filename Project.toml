@@ -16,6 +16,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 LinearAlgebra = "1"
 NLPModels = "0.21.12"
 SparseArrays = "1"
+Test = "1"
 julia = "1.10"
 
 [extras]
