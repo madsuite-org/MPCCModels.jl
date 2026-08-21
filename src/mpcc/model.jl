@@ -145,10 +145,10 @@ function MPCCModelConCon(
     if hasmethod(jac_lin_structure!, (typeof(nlp), IndexSet, IndexSet))
         lin_rows, lin_cols = NLPModels.jac_lin_structure(nlp)
         nln_rows, nln_cols = NLPModels.jac_nln_structure(nlp)
-        for i = 1:get_nlin(nlp)
+        for i in 1:get_nlin(nlp)
             lin_rows[i] += count(x < get_lin(nlp)[lin_rows[i]] for x in get_nln(nlp))
         end
-        for i = 1:get_nnln(nlp)
+        for i in 1:get_nnln(nlp)
             nln_rows[i] += count(x < get_nln(nlp)[nln_rows[i]] for x in get_lin(nlp))
         end
         ind_j_lin_triplets = findall(x->!((x∈ind_ccc1) || (x∈ind_ccc2)), lin_rows)
@@ -159,15 +159,15 @@ function MPCCModelConCon(
         nln = intersect(get_nln(nlp), ind_c)
         nlin = length(lin)
         nnln = length(nln)
-        c_lin = [i for i = 1:nlin if get_lin(nlp)[i] ∈ ind_c]
-        cc_lin = [i for i = 1:nlin if get_lin(nlp)[i] ∉ ind_c]
-        c_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∉ ind_c]
+        c_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∈ ind_c]
+        cc_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∉ ind_c]
+        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
+        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
 
         ind_j_lin_row_map =
-            Dict((i, i-count([x < i for x in cc_lin])) for i = 1:get_nlin(nlp))
+            Dict((i, i-count([x < i for x in cc_lin])) for i in 1:get_nlin(nlp))
         ind_j_nln_row_map =
-            Dict((i, i-count([x < i for x in cc_nln])) for i = 1:get_nnln(nlp))
+            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
     else
         ind_j_lin_triplets::IndexSet = []
         ind_j_nln_triplets = ind_j_triplets
@@ -177,12 +177,12 @@ function MPCCModelConCon(
         nnln = get_nnln(nlp)
         c_lin::IndexSet = []
         cc_lin::IndexSet = []
-        c_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∉ ind_c]
+        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
+        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
 
         ind_j_lin_row_map = Dict{Int,Int}()
         ind_j_nln_row_map::Dict{Int,Int} =
-            Dict((i, i-count([x < i for x in cc_nln])) for i = 1:get_nnln(nlp))
+            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
     end
     ind_j_comp_left_triplets = findall(x->x∈ind_ccc1, rows);
     ind_j_comp_right_triplets = findall(x->x∈ind_ccc2, rows);
@@ -193,8 +193,8 @@ function MPCCModelConCon(
     ind_cc1 = ind_ccc1;
     ind_cc2 = ind_ccc2;
     cc_types = fill!(Vector{CCType}(undef, ncc), ConCon)
-    cc_l = [i for i = 1:get_ncon(nlp) if i ∈ ind_cc1]
-    cc_r = [i for i = 1:get_ncon(nlp) if i ∈ ind_cc2]
+    cc_l = [i for i in 1:get_ncon(nlp) if i ∈ ind_cc1]
+    cc_r = [i for i in 1:get_ncon(nlp) if i ∈ ind_cc2]
 
     # nnzj updates:
     lin_nnzj = length(ind_j_lin_triplets)
@@ -267,10 +267,10 @@ function MPCCModelVarCon(
         lin_rows, lin_cols = NLPModels.jac_lin_structure(nlp)
         nln_rows, nln_cols = NLPModels.jac_nln_structure(nlp)
         # Convert to true row numbers
-        for i = 1:get_nlin(nlp)
+        for i in 1:get_nlin(nlp)
             lin_rows[i] += count(x < get_lin(nlp)[lin_rows[i]] for x in get_nln(nlp))
         end
-        for i = 1:get_nnln(nlp)
+        for i in 1:get_nnln(nlp)
             nln_rows[i] += count(x < get_nln(nlp)[nln_rows[i]] for x in get_lin(nlp))
         end
         # Keep only the "correct" indices
@@ -282,15 +282,15 @@ function MPCCModelVarCon(
         nln = intersect(get_nln(nlp), ind_c)
         nlin = length(lin)
         nnln = length(nln)
-        c_lin = [i for i = 1:nlin if get_lin(nlp)[i] ∈ ind_c]
-        cc_lin = [i for i = 1:nlin if get_lin(nlp)[i] ∉ ind_c]
-        c_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∉ ind_c]
+        c_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∈ ind_c]
+        cc_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∉ ind_c]
+        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
+        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
 
         ind_j_lin_row_map =
-            Dict((i, i-count([x < i for x in cc_lin])) for i = 1:get_nlin(nlp))
+            Dict((i, i-count([x < i for x in cc_lin])) for i in 1:get_nlin(nlp))
         ind_j_nln_row_map =
-            Dict((i, i-count([x < i for x in cc_nln])) for i = 1:get_nnln(nlp))
+            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
     else
         ind_j_lin_triplets::IndexSet = []
         ind_j_nln_triplets = ind_j_triplets
@@ -300,12 +300,12 @@ function MPCCModelVarCon(
         nnln = get_nnln(nlp)
         c_lin::IndexSet = []
         cc_lin::IndexSet = []
-        c_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i = 1:nnln if get_nln(nlp)[i] ∉ ind_c]
+        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
+        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
 
         ind_j_lin_row_map = Dict{Int,Int}()
         ind_j_nln_row_map::Dict{Int,Int} =
-            Dict((i, i-count([x < i for x in cc_nln])) for i = 1:get_nnln(nlp))
+            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
     end
     ind_j_comp_left_triplets::IndexSet = [];
     ind_j_comp_right_triplets = findall(x->x∈ind_ccc2, rows);
@@ -317,7 +317,7 @@ function MPCCModelVarCon(
     ind_cc2 = ind_ccc2;
     cc_types = fill!(Vector{CCType}(undef, ncc), VarCon)
     cc_l::IndexSet = [];
-    cc_r = [i for i = 1:get_ncon(nlp) if i ∈ ind_cc2]
+    cc_r = [i for i in 1:get_ncon(nlp) if i ∈ ind_cc2]
 
     # nnzj updates:
     lin_nnzj = length(ind_j_lin_triplets)
@@ -381,8 +381,8 @@ function MPCCModel(
     ncc = length(ind_cc1)
     nvar = get_nvar(nlp)
 
-    ind_lift1::IndexSet = [i for i = 1:ncc if cc_types[i]∈[ConVar, ConCon]]
-    ind_lift2::IndexSet = [i for i = 1:ncc if cc_types[i]∈[VarCon, ConCon]]
+    ind_lift1::IndexSet = [i for i in 1:ncc if cc_types[i]∈[ConVar, ConCon]]
+    ind_lift2::IndexSet = [i for i in 1:ncc if cc_types[i]∈[VarCon, ConCon]]
     nlift1 = length(ind_lift1)
     nlift2 = length(ind_lift2)
 
@@ -408,13 +408,13 @@ end
 function vertical_form(mpcc::AbstractMPCCModel)
     ind_var1 = [
         get_ind_cc1(mpcc)[i] for
-        i = 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[ConVar, ConCon]
+        i in 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[ConVar, ConCon]
     ]
 
     ind_lift1::IndexSet =
-        [i for i = 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[ConVar, ConCon]]
+        [i for i in 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[ConVar, ConCon]]
     ind_lift2::IndexSet =
-        [i for i = 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[VarCon, ConCon]]
+        [i for i in 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[VarCon, ConCon]]
     nlift1 = length(ind_lift1)
     nlift2 = length(ind_lift2)
 

@@ -269,7 +269,7 @@ end
 function NLPModels.hess_structure(mpcc::AbstractMPCCModel)
     rows = Vector{Int}(undef, get_nnzh(mpcc))
     cols = Vector{Int}(undef, get_nnzh(mpcc))
-    hess_structure!(mpcc, rows, cols)
+    return hess_structure!(mpcc, rows, cols)
 end
 
 """
@@ -375,7 +375,7 @@ function comp_left!(
     cvar = 0
     vert = true
     # First get variables:
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
             ccx[i] = x[get_ind_cc1(mpcc)[i]]
             cvar += 1
@@ -413,7 +413,7 @@ function comp_right!(
     cvar = 0
     vert = true
     # First get variables:
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
             ccx[i] = x[get_ind_cc2(mpcc)[i]]
             cvar += 1
@@ -444,7 +444,7 @@ end
 function lcomp_left!(mpcc::AbstractMPCCModel{T,VT}, lccx::AbstractVector{T}) where {T,VT}
     @lencheck get_ncc(mpcc) lccx
 
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
             lccx[i] = get_lvar(mpcc.nlp)[get_ind_cc1(mpcc)[i]]
         else
@@ -468,7 +468,7 @@ end
 function lcomp_right!(mpcc::AbstractMPCCModel{T,VT}, lccx::AbstractVector{T}) where {T,VT}
     @lencheck get_ncc(mpcc) lccx
 
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
             lccx[i] = get_lvar(mpcc.nlp)[get_ind_cc2(mpcc)[i]]
         else
@@ -499,7 +499,7 @@ function comp_res_left!(
 
     comp_left!(mpcc, x, lccx)
 
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
             lccx[i] -= get_lvar(mpcc.nlp)[get_ind_cc1(mpcc)[i]]
         else
@@ -530,7 +530,7 @@ function comp_res_right!(
 
     comp_right!(mpcc, x, rccx)
 
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
             rccx[i] -= get_lvar(mpcc.nlp)[get_ind_cc2(mpcc)[i]]
         else
@@ -608,7 +608,7 @@ function jac_comp_left_structure!(
 
     i_var_comp = length(get_ind_j_comp_left_triplets(mpcc)) + 1
     # TODO(@anton) maybe vectorize
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
             rows[i_var_comp] = i;
             cols[i_var_comp] = get_ind_cc1(mpcc)[i]
@@ -655,7 +655,7 @@ function jac_comp_right_structure!(
 
     i_var_comp = length(get_ind_j_comp_right_triplets(mpcc)) + 1
     # TODO(@anton) maybe vectorize
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
             rows[i_var_comp] = i;
             cols[i_var_comp] = get_ind_cc2(mpcc)[i]
@@ -690,7 +690,7 @@ function jac_comp_left_coord!(
 
     i_var_comp = length(get_ind_j_comp_left_triplets(mpcc)) + 1
     # TODO(@anton) maybe vectorize
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
             vals[i_var_comp] = 1.0;
             i_var_comp += 1
@@ -724,7 +724,7 @@ function jac_comp_right_coord!(
 
     i_var_comp = length(get_ind_j_comp_right_triplets(mpcc)) + 1
     # TODO(@anton) maybe vectorize
-    for i = 1:get_ncc(mpcc)
+    for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
             vals[i_var_comp] = 1.0;
             i_var_comp += 1

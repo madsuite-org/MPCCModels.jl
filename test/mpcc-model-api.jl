@@ -91,7 +91,6 @@
         Hv = zeros(T, n)
         Hvals = zeros(T, get_nnzh(mpcc))
 
-
         # NLP api subset
         @test obj(mpcc, x) ≈ f(x)
         @test grad(mpcc, x) ≈ ∇f(x)
