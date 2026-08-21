@@ -4,8 +4,7 @@
   The lifted variables inherit the bounds of the original constraints.
 """
 ######################### Metadata Definition #########################
-struct LiftedNLPModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
-       AbstractNLPModelMeta{T, VT}
+struct LiftedNLPModelMeta{T,VT,MT<:AbstractNLPModelMeta{T,VT}} <: AbstractNLPModelMeta{T,VT}
     parent::MT
 
     ind_lift::IndexSet
@@ -20,10 +19,10 @@ struct LiftedNLPModelMeta{T, VT, MT <: AbstractNLPModelMeta{T, VT}} <:
 end
 
 ######################### LiftedNLPModel Definition #########################
-struct LiftedNLPModel{T, VT, NLP <: AbstractNLPModel{T, VT}, NMT} <: AbstractNLPModel{T, VT}
+struct LiftedNLPModel{T,VT,NLP<:AbstractNLPModel{T,VT},NMT} <: AbstractNLPModel{T,VT}
     nlp::NLP
 
-    meta::LiftedNLPModelMeta{T, VT, NMT}
+    meta::LiftedNLPModelMeta{T,VT,NMT}
     counters::NLPModels.Counters
 end
 
@@ -64,15 +63,15 @@ function LiftedNLPModel(nlp::AbstractNLPModel, ind_lift::IndexSet)
 
     parent_meta = NLPModels.NLPModelMeta(
         nlp.meta,
-        nvar=nvar,
-        lcon=lcon,
-        ucon=ucon,
-        lvar=lvar,
-        uvar=uvar,
-        x0=x0,
-        nnzj=nnzj,
-        nln_nnzj=nln_nnzj,
-        lin_nnzj=lin_nnzj,
+        nvar = nvar,
+        lcon = lcon,
+        ucon = ucon,
+        lvar = lvar,
+        uvar = uvar,
+        x0 = x0,
+        nnzj = nnzj,
+        nln_nnzj = nln_nnzj,
+        lin_nnzj = lin_nnzj,
     )
 
     meta = LiftedNLPModelMeta(
@@ -273,36 +272,36 @@ function NLPModels.hess_structure!(
 end
 
 function NLPModels.hess_coord!(
-    lnlp::LiftedNLPModel{T, VT},
+    lnlp::LiftedNLPModel{T,VT},
     x::AbstractVector{T},
     y::AbstractVector{T},
     H::AbstractVector{T};
-    obj_weight::Real=one(T),
-) where {T, VT}
+    obj_weight::Real = one(T),
+) where {T,VT}
     return @views hess_coord!(
         lnlp.nlp,
         x[1:get_nvar(lnlp.nlp)],
         y,
         H;
-        obj_weight=obj_weight,
+        obj_weight = obj_weight,
     )
 end
 
 function NLPModels.hprod!(
-    lnlp::LiftedNLPModel{T, VT},
+    lnlp::LiftedNLPModel{T,VT},
     x::AbstractVector{T},
     y::AbstractVector{T},
     v::AbstractVector{T},
     Hv::AbstractVector;
-    obj_weight::Real=one(T),
-) where {T, VT}
+    obj_weight::Real = one(T),
+) where {T,VT}
     @views hprod!(
         lnlp.nlp,
         x[1:get_nvar(lnlp.nlp)],
         y,
         v[1:get_nvar(lnlp.nlp)],
         Hv[1:get_nvar(lnlp.nlp)];
-        obj_weight=obj_weight,
+        obj_weight = obj_weight,
     )
     Hv[(get_nvar(lnlp.nlp)+1):get_nvar(lnlp)] .= 0
     return Hv

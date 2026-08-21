@@ -11,7 +11,6 @@ const IndexSet = Vector{Int}
     ConCon=Clonglong(3)
 end
 
-
 ######################### Helper functions for AbstractMPCCModel #########################
 function is_vertical(mpcc::AbstractMPCCModel)
     return all(map((x)->x==VarVar, get_cc_types(mpcc)))
