@@ -35,8 +35,13 @@ struct MPCCModelMeta{T,VT,MT<:AbstractNLPModelMeta{T,VT}} <: AbstractNLPModelMet
     ind_j_nln_triplets::IndexSet
     ind_j_comp_left_triplets::IndexSet
     ind_j_comp_right_triplets::IndexSet
-    ind_j_comp_left_row_map::Dict{Int,Int}
-    ind_j_comp_right_row_map::Dict{Int,Int}
+    # Map each source constraint row to every complementarity row that uses it.
+    ind_j_comp_left_row_map::Dict{Int,IndexSet}
+    ind_j_comp_right_row_map::Dict{Int,IndexSet}
+    # Output complementarity row for each (possibly repeated) source Jacobian
+    # triplet. A source constraint may occur more than once in a CC side.
+    ind_j_comp_left_rows::IndexSet
+    ind_j_comp_right_rows::IndexSet
 
     ind_j_lin_row_map::Dict{Int,Int}
     ind_j_nln_row_map::Dict{Int,Int}
