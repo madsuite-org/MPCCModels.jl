@@ -34,7 +34,6 @@ function _mpcc_constraint_data(nlp::AbstractNLPModel, ind_c::IndexSet)
     # constraint rows are compacted to this order.
     ind_c = sort!(unique!(copy(ind_c)))
     kept = Set(ind_c)
-    row_map = Dict(row => i for (i, row) in enumerate(ind_c))
     source_lin = get_lin(nlp)
     source_nln = get_nln(nlp)
     source_lin_set = Set(source_lin)
@@ -54,8 +53,6 @@ function _mpcc_constraint_data(nlp::AbstractNLPModel, ind_c::IndexSet)
 
     return (; ind_c,
         ncon = length(ind_c),
-        lin = [row_map[row] for row in kept_lin],
-        nln = [row_map[row] for row in kept_nln],
         nlin = length(kept_lin),
         nnln = length(kept_nln),
         c_lin = findall(row -> row in kept, source_lin),
@@ -67,26 +64,27 @@ function _mpcc_constraint_data(nlp::AbstractNLPModel, ind_c::IndexSet)
         ind_j_nln_row_map)
 end
 
-function _make_mpcc(nlp::AbstractNLPModel{T,VT}, meta::MPCCModelMeta, ncc::Int) where {T,VT}
-    _c1 = VT(undef, get_ncon(nlp))
-    _j1 = VT(undef, get_nnzj(nlp))
-    _i1 = IndexSet(undef, get_nnzj(nlp))
-    _i2 = IndexSet(undef, get_nnzj(nlp))
-    _cc1 = VT(undef, ncc)
-    _cc2 = VT(undef, ncc)
-    return MPCCModel(nlp, meta, _c1, _j1, _i1, _i2, _cc1, _cc2, nlp.counters)
-end
+"""
+    _complementarity_jacobian_data(rows, ind_cc) -> triplets, output_rows
 
+Map the COO entries of the parent Jacobian onto complementarity rows. `rows`
+contains the parent constraint row for each Jacobian triplet, and `ind_cc`
+lists the parent constraint rows used by each complementarity component.
+
+The returned `triplets` contains parent Jacobian triplet indices, and
+`output_rows` contains the corresponding complementarity row for each index.
+The vectors have equal length and aligned entries. If a parent constraint row
+appears multiple times in `ind_cc`, each of its Jacobian triplets is repeated
+once for every corresponding complementarity row.
+"""
 function _complementarity_jacobian_data(rows::AbstractVector{<:Integer}, ind_cc::IndexSet)
-    triplets = IndexSet()
-    output_rows = IndexSet()
     cc_rows_by_source = Dict{Int,IndexSet}()
-
-    # Expand a source Jacobian row once for each complementarity component
-    # that uses it. This preserves duplicate constraint indices in `ind_cc`.
     for (cc_row, source_row) in enumerate(ind_cc)
         push!(get!(cc_rows_by_source, source_row, IndexSet()), cc_row)
     end
+
+    triplets = IndexSet()
+    output_rows = IndexSet()
     for (triplet, source_row) in enumerate(rows)
         if haskey(cc_rows_by_source, source_row)
             for cc_row in cc_rows_by_source[source_row]
@@ -96,7 +94,7 @@ function _complementarity_jacobian_data(rows::AbstractVector{<:Integer}, ind_cc:
         end
     end
 
-    return triplets, output_rows, cc_rows_by_source
+    return triplets, output_rows
 end
 
 function _build_mpcc_meta(
@@ -106,13 +104,8 @@ function _build_mpcc_meta(
     ind_cc1::IndexSet,
     ind_cc2::IndexSet,
     cc_types::Vector{CCType},
-    ind_x::IndexSet,
-    cc_l::IndexSet,
-    cc_r::IndexSet,
     ind_j_comp_left_triplets::IndexSet,
     ind_j_comp_right_triplets::IndexSet,
-    ind_j_comp_left_row_map::Dict{Int,IndexSet},
-    ind_j_comp_right_row_map::Dict{Int,IndexSet},
     ind_j_comp_left_rows::IndexSet,
     ind_j_comp_right_rows::IndexSet,
 )
@@ -124,14 +117,23 @@ function _build_mpcc_meta(
         Ref(nlp.meta), ncc, data.ncon, data.nlin, data.nnln,
         length(data.ind_j_triplets), length(data.ind_j_lin_triplets),
         length(data.ind_j_nln_triplets), comp_left_nnzj, comp_right_nnzj,
-        data.lin, data.nln, data.c_lin, data.c_nln, cc_l, cc_r,
-        ind_cc1, ind_cc2, cc_types, ind_x, data.ind_c,
+        data.c_lin, data.c_nln,
+        ind_cc1, ind_cc2, cc_types, data.ind_c,
         data.ind_j_triplets, data.ind_j_lin_triplets, data.ind_j_nln_triplets,
         ind_j_comp_left_triplets, ind_j_comp_right_triplets,
-        ind_j_comp_left_row_map, ind_j_comp_right_row_map,
         ind_j_comp_left_rows, ind_j_comp_right_rows,
         data.ind_j_lin_row_map, data.ind_j_nln_row_map,
     )
+end
+
+function _make_mpcc(nlp::AbstractNLPModel{T,VT}, meta::MPCCModelMeta, ncc::Int) where {T,VT}
+    _c1 = VT(undef, get_ncon(nlp))
+    _j1 = VT(undef, get_nnzj(nlp))
+    _i1 = IndexSet(undef, get_nnzj(nlp))
+    _i2 = IndexSet(undef, get_nnzj(nlp))
+    _cc1 = VT(undef, ncc)
+    _cc2 = VT(undef, ncc)
+    return MPCCModel(nlp, meta, _c1, _j1, _i1, _i2, _cc1, _cc2, nlp.counters)
 end
 
 """
@@ -231,15 +233,12 @@ function MPCCModel(
     end
     data = _mpcc_constraint_data(nlp, setdiff(1:ncon, comp_constraints))
     rows, _ = NLPModels.jac_structure(nlp)
-    left_triplets, left_rows, left_row_map =
-        _complementarity_jacobian_data(rows, left_con)
-    right_triplets, right_rows, right_row_map =
-        _complementarity_jacobian_data(rows, right_con)
+    left_triplets, left_rows = _complementarity_jacobian_data(rows, left_con)
+    right_triplets, right_rows =  _complementarity_jacobian_data(rows, right_con)
     meta = _build_mpcc_meta(
         nlp, ncc, data, left, right, types,
-        setdiff(1:nvar, union(left_var, right_var)), left_con, right_con,
         left_triplets, right_triplets,
-        left_row_map, right_row_map, left_rows, right_rows,
+        left_rows, right_rows,
     )
     return _make_mpcc(nlp, meta, ncc)
 end
