@@ -32,6 +32,12 @@ Which of these vectors are the target of the indexing is determined by the value
 | `ConCon`    | ``g_i(x)`` | ``g_j(x)`` | ``\ell^g_i`` | ``\ell^g_j`` |
 
 This allows the user maximum flexibility when it comes to modelling the original MPCC.
+Any constraint row used on either side of a complementarity pair must have a
+finite lower bound and an upper bound of ``+\infty``. Its lower bound is used
+as the corresponding complementarity lower bound, and the row is removed from
+the ordinary constraint list. The constructor throws an `ArgumentError` if a
+selected row does not meet these bound requirements.
+
 For practical algorithms however, we reformulate the problem into the so called "vertical form":
 ```math
 \begin{aligned}

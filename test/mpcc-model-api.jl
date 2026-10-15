@@ -114,6 +114,7 @@
         M in [NLPModelMeta, SimpleNLPMeta]
 
         nlp = SimpleNLPModel(T, M)
+        get_ucon(nlp)[1] = T(Inf)
         mpcc = MPCCModelVarCon(nlp, Int[1], Int[1])
         x = T[-0.5, -0.25]
         y = T[0.7]
@@ -182,6 +183,7 @@
         M in [NLPModelMeta, SimpleNLPMeta]
 
         nlp = SimpleNLPModel(T, M)
+        get_ucon(nlp)[1] = T(Inf)
         mpcc = MPCCModelConCon(nlp, Int[1], Int[2])
         x = T[0.5, 0.25]
 

@@ -226,6 +226,16 @@ function MPCCModel(
     _check_index_set(right_con, ncon, "right constraint indices")
 
     comp_constraints = union(left_con, right_con)
+    lcon = get_lcon(nlp)
+    ucon = get_ucon(nlp)
+    for row in comp_constraints
+        isfinite(lcon[row]) || throw(ArgumentError(
+            "constraint row $row used in complementarity must have a finite lower bound",
+        ))
+        (isinf(ucon[row]) && ucon[row] > 0) || throw(ArgumentError(
+            "constraint row $row used in complementarity must have an upper bound of Inf",
+        ))
+    end
     data = _mpcc_constraint_data(nlp, setdiff(1:ncon, comp_constraints))
     rows, _ = NLPModels.jac_structure(nlp)
     left_triplets, left_rows, left_row_map =
