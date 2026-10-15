@@ -266,6 +266,21 @@ function NLPModels.jprod_nln!(
     return Jv
 end
 
+function NLPModels.jprod(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jv = VT(undef, get_ncon(mpcc))
+    return jprod!(mpcc, x, v, Jv)
+end
+
+function NLPModels.jprod_lin(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jv = VT(undef, get_nlin(mpcc))
+    return jprod_lin!(mpcc, x, v, Jv)
+end
+
+function NLPModels.jprod_nln(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jv = VT(undef, get_nnln(mpcc))
+    return jprod_nln!(mpcc, x, v, Jv)
+end
+
 function NLPModels.jtprod!(
     mpcc::AbstractMPCCModel,
     x::AbstractVector,
@@ -297,6 +312,21 @@ function NLPModels.jtprod_nln!(
     # TODO(@anton) do this in a smarter way?
     Jtv[1:get_nvar(mpcc)] .= jac_nln(mpcc, x)' * v
     return Jtv
+end
+
+function NLPModels.jtprod(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jtv = VT(undef, get_nvar(mpcc))
+    return jtprod!(mpcc, x, v, Jtv)
+end
+
+function NLPModels.jtprod_lin(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jtv = VT(undef, get_nvar(mpcc))
+    return jtprod_lin!(mpcc, x, v, Jtv)
+end
+
+function NLPModels.jtprod_nln(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jtv = VT(undef, get_nvar(mpcc))
+    return jtprod_nln!(mpcc, x, v, Jtv)
 end
 
 """
@@ -418,6 +448,17 @@ function NLPModels.hprod!(
     mpcc._c1 .= T(0.0)
     mpcc._c1[get_ind_c(mpcc)] .= y
     return hprod!(mpcc.nlp, x, mpcc._c1, v, Hv; obj_weight = obj_weight)
+end
+
+function NLPModels.hprod(
+    mpcc::AbstractMPCCModel{T,VT},
+    x::AbstractVector{T},
+    y::AbstractVector{T},
+    v::AbstractVector{T};
+    obj_weight::Real = one(T),
+) where {T,VT}
+    Hv = VT(undef, get_nvar(mpcc))
+    return hprod!(mpcc, x, y, v, Hv; obj_weight = obj_weight)
 end
 
 """
@@ -777,7 +818,7 @@ function jac_comp_right_coord!(
 end
 
 """
-  Evaluates ``\\max_i \\min(G_i(x)-\\ell_{G_i},H_i(x)-\\ell_{H_i})``.
+  Evaluates ``\\vert\\min(G(x)-\\ell^G,H(x)-\\ell^H,0.0)\vert_\\infty``.
 """
 function comp_residual(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
     # TODO(@anton): This can be done more efficiently in vertical form
@@ -786,12 +827,12 @@ function comp_residual(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {
     comp_res_left!(mpcc, x, G)
     comp_res_right!(mpcc, x, H)
 
-    map!(min, G, G, H)
-    return maximum(G)
+    G .= min.(G, H, 0.0)
+    return norm(G, Inf)
 end
 
 """
-  Evaluates the maximum component of ``(G(x)-\\ell_G)\\odot(H(x)-\\ell_H)``.
+  Evaluates ``\\vert (G(x)-\\ell^G)\\odot(H(x)-\\ell^H)\vert_\\infty``.
 """
 function comp_residual_product(
     mpcc::AbstractMPCCModel{T,VT},
@@ -804,7 +845,7 @@ function comp_residual_product(
     comp_res_right!(mpcc, x, H)
 
     G .*= H
-    return maximum(G)
+    return norm(G, Inf)
 end
 
 """

@@ -62,7 +62,7 @@ In order to develop algorithms for solving MPCCs we define the following API for
 | ``H(x)``                                              | [`comp_right`](@ref)                                                  |                                               |
 | ``H(x)-\ell^H``                                       | [`comp_res_right`](@ref)                                              | Right hand side complementarity residual      |
 | ``\nabla_x G(x)``                                     | [`jac_comp_right_structure`](@ref) and [`jac_comp_right_coord`](@ref) | Jacobian of left hand side of complementarity |
-| ``\vert\min(G(x)-\ell^G,H(x)-\ell^H)\vert_\infty``    | [`comp_residual`](@ref)                                               |                                               |
+| ``\vert\min(G(x)-\ell^G,H(x)-\ell^H,0)\vert_\infty``    | [`comp_residual`](@ref)                                               |                                               |
 | ``\vert (G(x)-\ell^G)\odot(H(x)-\ell^H)\vert_\infty`` | [`comp_residual_product`](@ref)                                       |                                               |
 | ``(G(x)-\ell^G)\cdot(H(x)-\ell^H)``                    | [`comp_residual_sum`](@ref)                                           |                                               |
 
