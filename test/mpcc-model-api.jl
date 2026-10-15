@@ -5,6 +5,7 @@
         nlp = SimpleNLPModel(T, M)
         mpcc = MPCCModel(nlp, Int[1], Int[2])
         @test is_vertical(mpcc)
+        @test get_cc_var_indices(mpcc) == Int[1, 2]
 
         n = get_nvar(mpcc)
         m = get_ncon(mpcc)
@@ -76,6 +77,7 @@
         nlp = SimpleNLPModel(T, M)
         mpcc = MPCCModelVarCon(nlp, Int[1], Int[2])
         @test !is_vertical(mpcc)
+        @test get_cc_var_indices(mpcc) == Int[1]
 
         n = get_nvar(mpcc)
         m = get_ncon(mpcc)
@@ -148,6 +150,7 @@
         get_ucon(nlp)[1] = T(Inf)
         mpcc = MPCCModelConCon(nlp, Int[1], Int[2])
         @test !is_vertical(mpcc)
+        @test get_cc_var_indices(mpcc) == Int[]
 
         n = get_nvar(mpcc)
         m = get_ncon(mpcc)
@@ -219,8 +222,10 @@
         nlp = SimpleNLPModel(T, M)
         mpcc = MPCCModelVarCon(nlp, Int[1], Int[2])
         @test !is_vertical(mpcc)
+
         mpcc = vertical_form(mpcc)
         @test is_vertical(mpcc)
+        @test get_cc_var_indices(mpcc) == Int[1, 3]
 
         n = get_nvar(mpcc)
         m = get_ncon(mpcc)
@@ -293,8 +298,10 @@
         get_ucon(nlp)[1] = T(Inf)
         mpcc = MPCCModelConCon(nlp, Int[1], Int[2])
         @test !is_vertical(mpcc)
+
         mpcc = vertical_form(mpcc)
         @test is_vertical(mpcc)
+        @test get_cc_var_indices(mpcc) == Int[3, 4]
 
         n = get_nvar(mpcc)
         m = get_ncon(mpcc)

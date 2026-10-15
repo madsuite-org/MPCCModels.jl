@@ -31,4 +31,5 @@ export jac_comp_left_coord,
     jac_comp_left_coord!, jac_comp_right_coord, jac_comp_right_coord!
 export jac_comp_left, jac_comp_right
 export comp_residual, comp_residual_product, comp_residual_sum
+export get_cc_var_indices
 end
