@@ -1,4 +1,3 @@
-######################### Implementing NLPModels API #########################
 
 function _remap_constraint_indices(mpcc::MPCCModel, source_indices::AbstractVector{<:Integer})
     kept = get_ind_c(mpcc)

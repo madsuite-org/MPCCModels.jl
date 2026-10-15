@@ -134,7 +134,6 @@ function _build_mpcc_meta(
     )
 end
 
-######################### MPCC Constructors #########################
 """
 Constructor for `MPCCModel` in the form:
 
@@ -153,8 +152,6 @@ function MPCCModel(
 end
 
 """
-    MPCCModelConCon(nlp, ind_ccc1, ind_ccc2)
-
 Construct a constraint–constraint MPCC, with both complementarity sides
 selected from rows of `nlp`'s constraint vector. Every selected row must
 have a finite lower bound and an upper bound of `Inf`; selected rows are
@@ -169,8 +166,6 @@ function MPCCModelConCon(
 end
 
 """
-    MPCCModelVarCon(nlp, ind_vcc1, ind_ccc2)
-
 Construct a variable–constraint MPCC. `ind_vcc1` indexes variables for the
 left complementarity side, and `ind_ccc2` indexes constraint rows for the
 right side. Every selected constraint row must have a finite lower bound
@@ -186,8 +181,6 @@ function MPCCModelVarCon(
 end
 
 """
-    MPCCModel(nlp, ind_cc1, ind_cc2, cc_types)
-
 Construct an `MPCCModel` with one complementarity pair per entry of `cc_types`.
 The corresponding entries of `ind_cc1` and `ind_cc2` index variables or
 constraint rows according to the complementarity type:
@@ -199,7 +192,7 @@ constraint rows according to the complementarity type:
 
 Each constraint row used in a complementarity pair must have a finite lower
 bound and an upper bound of `Inf`. Such rows are removed from the ordinary
-constraint API, but are not lifted into variables.
+constraint API.
 """
 function MPCCModel(
     nlp::AbstractNLPModel,
@@ -251,7 +244,6 @@ function MPCCModel(
     return _make_mpcc(nlp, meta, ncc)
 end
 
-######################### Vertical Form Conversion #########################
 """
   "Verticalize" a generic MPCC by lifting the nonscalar components of ``G(x)`` and ``H(x)``
   with two slacks ``s_1`` and ``s_2``.

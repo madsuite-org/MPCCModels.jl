@@ -15,23 +15,14 @@ A julia package built on top of [NLPModels](https://github.com/JuliaSmoothOptimi
 
 To install MPCCModels, simply proceed to
 ```julia
-pkg> add https://github.com/MadNLP/MPCCModels.jl
+pkg> add MPCCModels
 ```
 
 ## Usage
 
-MPCCModels takes as input an `AbstractNLPModel` from [NLPModels](https://github.com/JuliaSmoothOptimizers/NLPModels.jl/), with `ind_x1` (resp. `ind_x2`) the indices of the variables appearing in the left-hand complementarity (resp. right-hand complementarity):
+MPCCModels takes as input an `AbstractNLPModel` from [NLPModels](https://github.com/JuliaSmoothOptimizers/NLPModels.jl/), with `ind_x1` (resp. `ind_x2`) the indices of the variables or constraint appearing in the left-hand complementarity (resp. right-hand complementarity), depending on `cc_types`:
 ```julia
 using NLPModels,MPCCModels
 nlp = create_your_nlp_model()
-mpcc = MPCCModel(nlp, ind_x1, ind_x2)
-```
-
-**Important**: Note that currently we only support the [`API`](https://madsuite.org/MPCCModels.jl/dev/api/#API) for MPCCs in "vertical form".
-In order to make sure your MPCC is in vertical form use the [`vertical_form`](https://madsuite.org/MPCCModels.jl/dev/reference/#MPCCModels.vertical_form-Tuple{AbstractMPCCModel}) function:
-```julia
-using NLPModels,MPCCModels
-nlp = create_your_nlp_model()
-mpcc = MPCCModel(nlp, ind_cc1, ind_cc1, cctypes)
-vertical_mpcc = vertical_form(mpcc)
+mpcc = MPCCModel(nlp, ind_x1, ind_x2, cc_types)
 ```
