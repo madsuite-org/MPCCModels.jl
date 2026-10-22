@@ -29,8 +29,8 @@ Such instances are composed of
   This `MPCCModelMeta` wraps an `AbstractNLPModelMeta` and only updates the necessary fields by overloading the getter api in `NLPModels.jl`.
 - the underlying `AbstractNLPModel` which stores the data necessary to build the MPCC.
 
-## Important Usage Note
-Note that while we support modelling MPCCs with nonlinear functions ``G(x)`` and ``H(x)``, the [API](@ref) supports only vertical form MPCCs:
+## Note
+Note that MPCCs modelled with nonlinear functions ``G(x)`` and ``H(x)``, can be converted into vertical form:
 ```math
 \begin{aligned}
 \min_x \quad & f(x) \\
@@ -40,7 +40,7 @@ Note that while we support modelling MPCCs with nonlinear functions ``G(x)`` and
 \end{aligned}
 ```
 where ``x_0`` ``x_1`` and ``x_2`` correspond to subsets of the decision variables ``x``.
-In order to ensure your MPCC is in vertical form use the [`vertical_form`](@ref) function.
+To make your MPCC is in vertical form use the [`vertical_form`](@ref) function.
 The function adds two slack variables ``s = (s_1, s_2)`` to reformulate the complementarity
 constraints appearing in the MPCC as:
 ```math

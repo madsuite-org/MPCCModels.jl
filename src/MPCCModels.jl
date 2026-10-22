@@ -19,7 +19,7 @@ include("mpcc/api.jl")
 # types
 export AbstractMPCCModel, MPCCModel, MPCCModelMeta, CCType
 # constructors and verticalization
-export MPCCModelVarCon, vertical_form, is_vertical
+export MPCCModelVarCon, MPCCModelConCon, vertical_form, is_vertical
 # API for MPCCs
 export comp_left, comp_left!, comp_right, comp_right!
 export lcomp_left, lcomp_left!, lcomp_right, lcomp_right!
@@ -31,4 +31,5 @@ export jac_comp_left_coord,
     jac_comp_left_coord!, jac_comp_right_coord, jac_comp_right_coord!
 export jac_comp_left, jac_comp_right
 export comp_residual, comp_residual_product, comp_residual_sum
+export get_cc_var_indices
 end

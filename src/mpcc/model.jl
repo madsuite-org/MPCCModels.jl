@@ -23,415 +23,242 @@ struct MPCCModel{T,VT,NLP<:NLPModels.AbstractNLPModel{T,VT},NMT} <: AbstractMPCC
     counters::NLPModels.Counters
 end
 
-######################### MPCC Constructors #########################
 """
-  Constructor for `MPCCModel` in the form:
+Constructor for `MPCCModel` in the form:
 
      min f(x)
      s.t. lbc ≤ c(w) ≤ ubc
-          lbx₁ ≤ x₁ ⟂x₂ ≥ lbx₂
+          lbx₁ ≤ x₁ ⟂ x₂ ≥ lbx₂
 
-  where x₁ and x₂ are defined by index sets `ind_vcc1` and `ind_vcc2`.
+where x₁ and x₂ are defined by index sets `ind_vcc1` and `ind_vcc2`.
 """
 function MPCCModel(
     nlp::AbstractNLPModel{T,VT},
     ind_vcc1::IndexSet,
     ind_vcc2::IndexSet,
 ) where {T,VT}
-    # compute sizes
-    ncc = length(ind_vcc1)
-    ncon = get_ncon(nlp)
-    nlin = get_nlin(nlp)
-    nnln = get_nnln(nlp)
-
-    # compute non-complementarity variables/constraints
-    ind_x = setdiff(1:get_nvar(nlp), union(ind_vcc1, ind_vcc2))
-    ind_c = collect(1:get_ncon(nlp))
-
-    # compute jacobian structure indexset
-    ind_j_triplets = collect(1:get_nnzj(nlp))
-    ind_j_lin_triplets = collect(1:get_lin_nnzj(nlp))
-    ind_j_nln_triplets = collect(1:get_nln_nnzj(nlp))
-    ind_j_lin_row_map = Dict(zip(1:nlin, 1:nlin))
-    ind_j_nln_row_map = Dict(zip(1:nnln, 1:nnln))
-
-    ind_j_comp_left_triplets::IndexSet = []
-    ind_j_comp_right_triplets::IndexSet = []
-    ind_j_comp_left_row_map = Dict{Int,Int}()
-    ind_j_comp_right_row_map = Dict{Int,Int}()
-    # compute nln and lin index sets
-    lin = get_lin(nlp)
-    nln = get_nln(nlp)
-    nlin = length(lin)
-    nnln = length(nln)
-    c_lin = collect(1:nlin)
-    c_nln = collect(1:nnln)
-    cc_l::IndexSet = []
-    cc_r::IndexSet = []
-
-    # Complementarity Constraints
-    ind_cc1 = ind_vcc1
-    ind_cc2 = ind_vcc2
-    cc_types = fill!(Vector{CCType}(undef, ncc), VarVar)
-
-    # nnzj updates:
-    nnzj = get_nnzj(nlp)
-    lin_nnzj = get_lin_nnzj(nlp)
-    nln_nnzj = get_nln_nnzj(nlp)
-    comp_left_nnzj = ncc
-    comp_right_nnzj = ncc
-
-    meta = MPCCModelMeta(
-        Ref(nlp.meta),
-        ncc,
-        ncon,
-        nlin,
-        nnln,
-        nnzj,
-        lin_nnzj,
-        nln_nnzj,
-        comp_left_nnzj,
-        comp_right_nnzj,
-        lin,
-        nln,
-        c_lin,
-        c_nln,
-        cc_l,
-        cc_r,
-        ind_cc1,
-        ind_cc2,
-        cc_types,
-        ind_x,
-        ind_c,
-        ind_j_triplets,
-        ind_j_lin_triplets,
-        ind_j_nln_triplets,
-        ind_j_comp_left_triplets,
-        ind_j_comp_right_triplets,
-        ind_j_comp_left_row_map,
-        ind_j_comp_right_row_map,
-        ind_j_lin_row_map,
-        ind_j_nln_row_map,
-    )
-
-    # Build work vectors
-    _c1 = VT(undef, get_ncon(nlp))
-    _j1 = VT(undef, get_nnzj(nlp))
-    _i1 = IndexSet(undef, get_nnzj(nlp))
-    _i2 = IndexSet(undef, get_nnzj(nlp))
-    _cc1 = VT(undef, ncc)
-    _cc2 = VT(undef, ncc)
-
-    return MPCCModel(nlp, meta, _c1, _j1, _i1, _i2, _cc1, _cc2, nlp.counters)
+    return MPCCModel(nlp, ind_vcc1, ind_vcc2, fill(VarVar, length(ind_vcc1)))
 end
 
-# Constructor
+"""
+Construct a constraint–constraint MPCC, with both complementarity sides
+selected from rows of `nlp`'s constraint vector. Every selected row must
+have a finite lower bound and an upper bound of `Inf`; selected rows are
+removed from the ordinary constraint API.
+"""
 function MPCCModelConCon(
     nlp::AbstractNLPModel{T,VT},
     ind_ccc1::IndexSet,
     ind_ccc2::IndexSet,
 ) where {T,VT}
-    # compute sizes
-    ncc = length(ind_ccc1)
-    ncon = get_ncon(nlp) - 2*ncc
-
-    # compute non-complementarity variables/constraints
-    ind_x = collect(1:get_nvar(nlp))
-    ind_c = setdiff(1:get_ncon(nlp), union(ind_ccc1, ind_ccc2))
-
-    # compute jacobian structure indexset
-    rows, cols = NLPModels.jac_structure(nlp)
-    ind_j_triplets = findall(x->x ∈ ind_c, rows)
-    if hasmethod(jac_lin_structure!, (typeof(nlp), IndexSet, IndexSet))
-        lin_rows, lin_cols = NLPModels.jac_lin_structure(nlp)
-        nln_rows, nln_cols = NLPModels.jac_nln_structure(nlp)
-        for i in 1:get_nlin(nlp)
-            lin_rows[i] += count(x < get_lin(nlp)[lin_rows[i]] for x in get_nln(nlp))
-        end
-        for i in 1:get_nnln(nlp)
-            nln_rows[i] += count(x < get_nln(nlp)[nln_rows[i]] for x in get_lin(nlp))
-        end
-        ind_j_lin_triplets = findall(x->!((x∈ind_ccc1) || (x∈ind_ccc2)), lin_rows)
-        ind_j_nln_triplets = findall(x->!((x∈ind_ccc1) || (x∈ind_ccc2)), nln_rows)
-
-        # compute nln and lin index sets
-        lin = intersect(get_lin(nlp), ind_c)
-        nln = intersect(get_nln(nlp), ind_c)
-        nlin = length(lin)
-        nnln = length(nln)
-        c_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∈ ind_c]
-        cc_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∉ ind_c]
-        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
-
-        ind_j_lin_row_map =
-            Dict((i, i-count([x < i for x in cc_lin])) for i in 1:get_nlin(nlp))
-        ind_j_nln_row_map =
-            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
-    else
-        ind_j_lin_triplets::IndexSet = []
-        ind_j_nln_triplets = ind_j_triplets
-        lin::IndexSet = []
-        nln = get_nln(nlp)
-        nlin = get_nlin(nlp)
-        nnln = get_nnln(nlp)
-        c_lin::IndexSet = []
-        cc_lin::IndexSet = []
-        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
-
-        ind_j_lin_row_map = Dict{Int,Int}()
-        ind_j_nln_row_map::Dict{Int,Int} =
-            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
-    end
-    ind_j_comp_left_triplets = findall(x->x∈ind_ccc1, rows);
-    ind_j_comp_right_triplets = findall(x->x∈ind_ccc2, rows);
-    ind_j_comp_left_row_map = Dict{Int,Int}(zip(ind_ccc1, 1:ncc))
-    ind_j_comp_right_row_map = Dict{Int,Int}(zip(ind_ccc2, 1:ncc))
-
-    # Complementarity Constraints
-    ind_cc1 = ind_ccc1;
-    ind_cc2 = ind_ccc2;
-    cc_types = fill!(Vector{CCType}(undef, ncc), ConCon)
-    cc_l = [i for i in 1:get_ncon(nlp) if i ∈ ind_cc1]
-    cc_r = [i for i in 1:get_ncon(nlp) if i ∈ ind_cc2]
-
-    # nnzj updates:
-    lin_nnzj = length(ind_j_lin_triplets)
-    nln_nnzj = length(ind_j_nln_triplets)
-    nnzj = lin_nnzj + nln_nnzj
-    comp_left_nnzj = length(ind_j_comp_left_triplets)
-    comp_right_nnzj = length(ind_j_comp_right_triplets)
-
-    meta = MPCCModelMeta(
-        Ref(nlp.meta),
-        ncc,
-        ncon,
-        nlin,
-        nnln,
-        nnzj,
-        lin_nnzj,
-        nln_nnzj,
-        comp_left_nnzj,
-        comp_right_nnzj,
-        lin,
-        nln,
-        c_lin,
-        c_nln,
-        cc_l,
-        cc_r,
-        ind_cc1,
-        ind_cc2,
-        cc_types,
-        ind_x,
-        ind_c,
-        ind_j_triplets,
-        ind_j_lin_triplets,
-        ind_j_nln_triplets,
-        ind_j_comp_left_triplets,
-        ind_j_comp_right_triplets,
-        ind_j_comp_left_row_map,
-        ind_j_comp_right_row_map,
-        ind_j_lin_row_map,
-        ind_j_nln_row_map,
-    )
-
-    # Build work vectors
-    _c1 = VT(undef, get_ncon(nlp))
-    _j1 = VT(undef, get_nnzj(nlp))
-    _i1 = IndexSet(undef, get_nnzj(nlp))
-    _i2 = IndexSet(undef, get_nnzj(nlp))
-    _cc1 = VT(undef, ncc)
-    _cc2 = VT(undef, ncc)
-
-    return MPCCModel(nlp, meta, _c1, _j1, _i1, _i2, _cc1, _cc2, nlp.counters)
+    return MPCCModel(nlp, ind_ccc1, ind_ccc2, fill(ConCon, length(ind_ccc1)))
 end
 
-# Constructor
+"""
+Construct a variable–constraint MPCC. `ind_vcc1` indexes variables for the
+left complementarity side, and `ind_ccc2` indexes constraint rows for the
+right side. Every selected constraint row must have a finite lower bound
+and an upper bound of `Inf`; selected rows are removed from the ordinary
+constraint API.
+"""
 function MPCCModelVarCon(
     nlp::AbstractNLPModel{T,VT},
     ind_vcc1::IndexSet,
     ind_ccc2::IndexSet,
 ) where {T,VT}
-    # compute sizes
-    ncc = length(ind_vcc1)
-    ncon = get_ncon(nlp) - ncc
-    # compute non-complementarity variables/constraints
-    ind_x = setdiff(1:get_nvar(nlp), ind_vcc1)
-    ind_c = setdiff(1:get_ncon(nlp), ind_ccc2)
-
-    # compute jacobian structure indexset
-    rows, cols = NLPModels.jac_structure(nlp)
-    ind_j_triplets = findall(x->x ∈ ind_c, rows)
-    if hasmethod(jac_lin_structure!, (typeof(nlp), IndexSet, IndexSet))
-        lin_rows, lin_cols = NLPModels.jac_lin_structure(nlp)
-        nln_rows, nln_cols = NLPModels.jac_nln_structure(nlp)
-        # Convert to true row numbers
-        for i in 1:get_nlin(nlp)
-            lin_rows[i] += count(x < get_lin(nlp)[lin_rows[i]] for x in get_nln(nlp))
-        end
-        for i in 1:get_nnln(nlp)
-            nln_rows[i] += count(x < get_nln(nlp)[nln_rows[i]] for x in get_lin(nlp))
-        end
-        # Keep only the "correct" indices
-        ind_j_lin_triplets = findall(x->!(x∈ind_ccc2), lin_rows)
-        ind_j_nln_triplets = findall(x->!(x∈ind_ccc2), nln_rows)
-
-        # compute nln and lin index sets
-        lin = intersect(get_lin(nlp), ind_c)
-        nln = intersect(get_nln(nlp), ind_c)
-        nlin = length(lin)
-        nnln = length(nln)
-        c_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∈ ind_c]
-        cc_lin = [i for i in 1:nlin if get_lin(nlp)[i] ∉ ind_c]
-        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
-
-        ind_j_lin_row_map =
-            Dict((i, i-count([x < i for x in cc_lin])) for i in 1:get_nlin(nlp))
-        ind_j_nln_row_map =
-            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
-    else
-        ind_j_lin_triplets::IndexSet = []
-        ind_j_nln_triplets = ind_j_triplets
-        lin::IndexSet = []
-        nln = get_nln(nlp)
-        nlin = get_nlin(nlp)
-        nnln = get_nnln(nlp)
-        c_lin::IndexSet = []
-        cc_lin::IndexSet = []
-        c_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∈ ind_c]
-        cc_nln = [i for i in 1:nnln if get_nln(nlp)[i] ∉ ind_c]
-
-        ind_j_lin_row_map = Dict{Int,Int}()
-        ind_j_nln_row_map::Dict{Int,Int} =
-            Dict((i, i-count([x < i for x in cc_nln])) for i in 1:get_nnln(nlp))
-    end
-    ind_j_comp_left_triplets::IndexSet = [];
-    ind_j_comp_right_triplets = findall(x->x∈ind_ccc2, rows);
-    ind_j_comp_left_row_map = Dict{Int,Int}()
-    ind_j_comp_right_row_map = Dict{Int,Int}(zip(ind_ccc2, 1:ncc))
-
-    # UNUSED
-    ind_cc1 = ind_vcc1;
-    ind_cc2 = ind_ccc2;
-    cc_types = fill!(Vector{CCType}(undef, ncc), VarCon)
-    cc_l::IndexSet = [];
-    cc_r = [i for i in 1:get_ncon(nlp) if i ∈ ind_cc2]
-
-    # nnzj updates:
-    lin_nnzj = length(ind_j_lin_triplets)
-    nln_nnzj = length(ind_j_nln_triplets)
-    nnzj = lin_nnzj + nln_nnzj
-    comp_left_nnzj = ncc
-    comp_right_nnzj = length(ind_j_comp_right_triplets)
-
-    meta = MPCCModelMeta(
-        Ref(nlp.meta),
-        ncc,
-        ncon,
-        nlin,
-        nnln,
-        nnzj,
-        lin_nnzj,
-        nln_nnzj,
-        comp_left_nnzj,
-        comp_right_nnzj,
-        lin,
-        nln,
-        c_lin,
-        c_nln,
-        cc_l,
-        cc_r,
-        ind_cc1,
-        ind_cc2,
-        cc_types,
-        ind_x,
-        ind_c,
-        ind_j_triplets,
-        ind_j_lin_triplets,
-        ind_j_nln_triplets,
-        ind_j_comp_left_triplets,
-        ind_j_comp_right_triplets,
-        ind_j_comp_left_row_map,
-        ind_j_comp_right_row_map,
-        ind_j_lin_row_map,
-        ind_j_nln_row_map,
-    )
-
-    # Build work vectors
-    _c1 = VT(undef, get_ncon(nlp))
-    _j1 = VT(undef, get_nnzj(nlp))
-    _i1 = IndexSet(undef, get_nnzj(nlp))
-    _i2 = IndexSet(undef, get_nnzj(nlp))
-    _cc1 = VT(undef, ncc)
-    _cc2 = VT(undef, ncc)
-
-    return MPCCModel(nlp, meta, _c1, _j1, _i1, _i2, _cc1, _cc2, nlp.counters)
+    return MPCCModel(nlp, ind_vcc1, ind_ccc2, fill(VarCon, length(ind_vcc1)))
 end
 
-# Verticalize generic CC types. Returns a vertical form MPCC
-# TODO(@anton) we do no checks here :)
+"""
+Construct an `MPCCModel` with one complementarity pair per entry of `cc_types`.
+The corresponding entries of `ind_cc1` and `ind_cc2` index variables or
+constraint rows according to the complementarity type:
+
+- `VarVar`: both indices refer to variables.
+- `VarCon`: `ind_cc1` refers to a variable and `ind_cc2` to a constraint row.
+- `ConVar`: `ind_cc1` refers to a constraint row and `ind_cc2` to a variable.
+- `ConCon`: both indices refer to constraint rows.
+
+Each constraint row used in a complementarity pair must have a finite lower
+bound and an upper bound of `Inf`. Such rows are removed from the ordinary
+constraint API.
+"""
 function MPCCModel(
     nlp::AbstractNLPModel,
     ind_cc1::IndexSet,
     ind_cc2::IndexSet,
     cc_types::AbstractVector{CCType},
 )
-    ncc = length(ind_cc1)
+    left = copy(ind_cc1)
+    right = copy(ind_cc2)
+    types = collect(cc_types)
+    ncc = length(left)
+    length(right) == ncc || throw(ArgumentError("complementarity index sets must have equal lengths"))
+    length(types) == ncc || throw(ArgumentError("one complementarity type is required per pair"))
     nvar = get_nvar(nlp)
+    ncon = get_ncon(nlp)
 
-    ind_lift1::IndexSet = [i for i in 1:ncc if cc_types[i]∈[ConVar, ConCon]]
-    ind_lift2::IndexSet = [i for i in 1:ncc if cc_types[i]∈[VarCon, ConCon]]
-    nlift1 = length(ind_lift1)
-    nlift2 = length(ind_lift2)
+    left_var = [left[i] for i in 1:ncc if types[i] in (VarVar, VarCon)]
+    right_var = [right[i] for i in 1:ncc if types[i] in (VarVar, ConVar)]
+    left_con = [left[i] for i in 1:ncc if types[i] in (ConVar, ConCon)]
+    right_con = [right[i] for i in 1:ncc if types[i] in (VarCon, ConCon)]
+    _check_index_set(left_var, nvar, "left variable indices")
+    _check_index_set(right_var, nvar, "right variable indices")
+    _check_index_set(left_con, ncon, "left constraint indices")
+    _check_index_set(right_con, ncon, "right constraint indices")
 
-    ind_lift::IndexSet =
-        vcat(map((i) -> ind_cc1[i], ind_lift1), map((i) -> ind_cc2[i], ind_lift2))
-    vnlp = LiftedNLPModel(nlp, ind_lift)
-
-    lift1 = (nvar+1):(nvar+nlift1)
-    lift2 = (nvar+nlift1+1):(nvar+nlift1+nlift2)
-
-    ind_vcc1 = ind_cc1
-    ind_vcc1[ind_lift1] = lift1
-    ind_vcc2 = ind_cc2
-    ind_vcc2[ind_lift2] = lift2
-
-    return MPCCModel(vnlp, ind_vcc1, ind_vcc2)
+    comp_constraints = union(left_con, right_con)
+    lcon = get_lcon(nlp)
+    ucon = get_ucon(nlp)
+    for row in comp_constraints
+        isfinite(lcon[row]) || throw(ArgumentError(
+            "constraint row $row used in complementarity must have a finite lower bound",
+        ))
+        (isinf(ucon[row]) && ucon[row] > 0) || throw(ArgumentError(
+            "constraint row $row used in complementarity must have an upper bound of Inf",
+        ))
+    end
+    data = _mpcc_constraint_data(nlp, setdiff(1:ncon, comp_constraints))
+    rows, _ = NLPModels.jac_structure(nlp)
+    left_triplets, left_rows = _complementarity_jacobian_data(rows, left_con)
+    right_triplets, right_rows =  _complementarity_jacobian_data(rows, right_con)
+    meta = _build_mpcc_meta(
+        nlp, ncc, data, left, right, types,
+        left_triplets, right_triplets,
+        left_rows, right_rows,
+    )
+    return _make_mpcc(nlp, meta, ncc)
 end
 
-######################### Vertical Form Conversion #########################
 """
   "Verticalize" a generic MPCC by lifting the nonscalar components of ``G(x)`` and ``H(x)``
   with two slacks ``s_1`` and ``s_2``.
 """
 function vertical_form(mpcc::AbstractMPCCModel)
-    ind_var1 = [
-        get_ind_cc1(mpcc)[i] for
-        i in 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[ConVar, ConCon]
-    ]
-
-    ind_lift1::IndexSet =
-        [i for i in 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[ConVar, ConCon]]
-    ind_lift2::IndexSet =
-        [i for i in 1:get_ncc(mpcc) if get_cc_types(mpcc)[i]∈[VarCon, ConCon]]
-    nlift1 = length(ind_lift1)
-    nlift2 = length(ind_lift2)
-
-    ind_lift::IndexSet = vcat(
-        map((i) -> get_ind_cc1(mpcc)[i], ind_lift1),
-        map((i) -> get_ind_cc2(mpcc)[i], ind_lift2),
-    )
+    left = copy(get_ind_cc1(mpcc))
+    right = copy(get_ind_cc2(mpcc))
+    types = get_cc_types(mpcc)
+    left_con = [left[i] for i in 1:get_ncc(mpcc) if types[i] in (ConVar, ConCon)]
+    right_con = [right[i] for i in 1:get_ncc(mpcc) if types[i] in (VarCon, ConCon)]
+    ind_lift = Base.unique(vcat(left_con, right_con))
     vnlp = LiftedNLPModel(mpcc.nlp, ind_lift)
-
-    lift1 = (get_nvar(mpcc.nlp)+1):(get_nvar(mpcc.nlp)+nlift1)
-    lift2 = (get_nvar(mpcc.nlp)+nlift1+1):(get_nvar(mpcc.nlp)+nlift1+nlift2)
-
-    ind_vcc1 = get_ind_cc1(mpcc)
-    ind_vcc1[ind_lift1] = lift1
-    ind_vcc2 = get_ind_cc2(mpcc)
-    ind_vcc2[ind_lift2] = lift2
+    nvar = get_nvar(mpcc.nlp)
+    lift_var = Dict(row => nvar + i for (i, row) in enumerate(ind_lift))
+    ind_vcc1 = copy(left)
+    ind_vcc2 = copy(right)
+    for i in 1:get_ncc(mpcc)
+        if types[i] in (ConVar, ConCon)
+            ind_vcc1[i] = lift_var[left[i]]
+        end
+        if types[i] in (VarCon, ConCon)
+            ind_vcc2[i] = lift_var[right[i]]
+        end
+    end
 
     return MPCCModel(vnlp, ind_vcc1, ind_vcc2)
+end
+
+function _check_index_set(indices::IndexSet, upper::Int, name::AbstractString)
+    all(i -> 1 <= i <= upper, indices) ||
+        throw(ArgumentError("$name contains an index outside 1:$upper"))
+    return indices
+end
+
+function _mpcc_constraint_data(nlp::AbstractNLPModel, ind_c::IndexSet)
+    # `ind_c` is kept in the underlying NLP's constraint order. All public
+    # constraint rows are compacted to this order.
+    ind_c = sort!(unique!(copy(ind_c)))
+    kept = Set(ind_c)
+    source_lin = get_lin(nlp)
+    source_nln = get_nln(nlp)
+    source_lin_set = Set(source_lin)
+    source_nln_set = Set(source_nln)
+    kept_lin = [row for row in source_lin if row in kept]
+    kept_nln = [row for row in source_nln if row in kept]
+
+    rows, _ = NLPModels.jac_structure(nlp)
+    ind_j_triplets = findall(row -> row in kept, rows)
+    ind_j_lin_triplets = findall(row -> row in kept && row in source_lin_set, rows)
+    ind_j_nln_triplets = findall(row -> row in kept && row in source_nln_set, rows)
+
+    # These maps accept original NLP row numbers. The Jacobian helper methods
+    # use full-NLP COO data and map the rows into the filtered MPCC outputs.
+    ind_j_lin_row_map = Dict(row => i for (i, row) in enumerate(kept_lin))
+    ind_j_nln_row_map = Dict(row => i for (i, row) in enumerate(kept_nln))
+
+    return (; ind_c,
+        ncon = length(ind_c),
+        nlin = length(kept_lin),
+        nnln = length(kept_nln),
+        c_lin = findall(row -> row in kept, source_lin),
+        c_nln = findall(row -> row in kept, source_nln),
+        ind_j_triplets,
+        ind_j_lin_triplets,
+        ind_j_nln_triplets,
+        ind_j_lin_row_map,
+        ind_j_nln_row_map)
+end
+
+function _complementarity_jacobian_data(rows::AbstractVector{<:Integer}, ind_cc::IndexSet)
+    cc_rows_by_source = Dict{Int,IndexSet}()
+    for (cc_row, source_row) in enumerate(ind_cc)
+        push!(get!(cc_rows_by_source, source_row, IndexSet()), cc_row)
+    end
+
+    # The returned `triplets` contains parent Jacobian triplet indices, and
+    # `output_rows` contains the corresponding complementarity row for each index.
+    # The vectors have equal length and aligned entries. If a parent constraint row
+    # appears multiple times in `ind_cc`, each of its Jacobian triplets is repeated
+    # once for every corresponding complementarity row.
+    triplets = IndexSet()
+    output_rows = IndexSet()
+    for (triplet, source_row) in enumerate(rows)
+        if haskey(cc_rows_by_source, source_row)
+            for cc_row in cc_rows_by_source[source_row]
+                push!(triplets, triplet)
+                push!(output_rows, cc_row)
+            end
+        end
+    end
+
+    return triplets, output_rows
+end
+
+function _build_mpcc_meta(
+    nlp::AbstractNLPModel,
+    ncc::Int,
+    data,
+    ind_cc1::IndexSet,
+    ind_cc2::IndexSet,
+    cc_types::Vector{CCType},
+    ind_j_comp_left_triplets::IndexSet,
+    ind_j_comp_right_triplets::IndexSet,
+    ind_j_comp_left_rows::IndexSet,
+    ind_j_comp_right_rows::IndexSet,
+)
+    comp_left_nnzj = length(ind_j_comp_left_triplets) +
+                     count(t -> t in (VarVar, VarCon), cc_types)
+    comp_right_nnzj = length(ind_j_comp_right_triplets) +
+                      count(t -> t in (VarVar, ConVar), cc_types)
+    return MPCCModelMeta(
+        Ref(nlp.meta), ncc, data.ncon, data.nlin, data.nnln,
+        length(data.ind_j_triplets), length(data.ind_j_lin_triplets),
+        length(data.ind_j_nln_triplets), comp_left_nnzj, comp_right_nnzj,
+        data.c_lin, data.c_nln,
+        ind_cc1, ind_cc2, cc_types, data.ind_c,
+        data.ind_j_triplets, data.ind_j_lin_triplets, data.ind_j_nln_triplets,
+        ind_j_comp_left_triplets, ind_j_comp_right_triplets,
+        ind_j_comp_left_rows, ind_j_comp_right_rows,
+        data.ind_j_lin_row_map, data.ind_j_nln_row_map,
+    )
+end
+
+function _make_mpcc(nlp::AbstractNLPModel{T,VT}, meta::MPCCModelMeta, ncc::Int) where {T,VT}
+    _c1 = VT(undef, get_ncon(nlp))
+    _j1 = VT(undef, get_nnzj(nlp))
+    _i1 = IndexSet(undef, get_nnzj(nlp))
+    _i2 = IndexSet(undef, get_nnzj(nlp))
+    _cc1 = VT(undef, ncc)
+    _cc2 = VT(undef, ncc)
+    return MPCCModel(nlp, meta, _c1, _j1, _i1, _i2, _cc1, _cc2, nlp.counters)
 end

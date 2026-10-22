@@ -25,6 +25,8 @@
 
         @test obj(nlp, x) ≈ f(x)
         @test grad(nlp, x) ≈ ∇f(x)
+        @test objgrad(nlp, x)[1] ≈ f(x)
+        @test objgrad(nlp, x)[2] ≈ ∇f(x)
         @test hess(nlp, x) ≈ H(x)
         @test hprod(nlp, x, v) ≈ H(x) * v
         @test cons(nlp, x) ≈ c(x)

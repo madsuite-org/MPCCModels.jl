@@ -1,4 +1,19 @@
-######################### Implementing NLPModels API #########################
+
+function _remap_constraint_indices(mpcc::MPCCModel, source_indices::AbstractVector{<:Integer})
+    kept = get_ind_c(mpcc)
+    row_map = Dict(row => i for (i, row) in enumerate(kept))
+    return [row_map[i] for i in source_indices if haskey(row_map, i)]
+end
+
+NLPModels.get_lcon(mpcc::MPCCModel) = NLPModels.get_lcon(mpcc.nlp)[get_ind_c(mpcc)]
+NLPModels.get_ucon(mpcc::MPCCModel) = NLPModels.get_ucon(mpcc.nlp)[get_ind_c(mpcc)]
+NLPModels.get_y0(mpcc::MPCCModel) = NLPModels.get_y0(mpcc.nlp)[get_ind_c(mpcc)]
+
+for getter in (:get_jfix, :get_jlow, :get_jupp, :get_jrng, :get_jfree, :get_jinf)
+    @eval NLPModels.$getter(mpcc::MPCCModel) =
+        _remap_constraint_indices(mpcc, NLPModels.$getter(mpcc.nlp))
+end
+
 """
   Evaluates the MPCC objective ``f(x)``
 """
@@ -55,8 +70,32 @@ end
 function NLPModels.cons_nln!(mpcc::AbstractMPCCModel, x::AbstractVector, cx::AbstractVector)
     _c_nln = view(mpcc._c1, 1:get_nnln(mpcc.nlp))
     cons_nln!(mpcc.nlp, x, _c_nln)
-    @views cx .= _c_lin[get_c_nln(mpcc)]
+    @views cx .= _c_nln[get_c_nln(mpcc)]
     return cx
+end
+
+function NLPModels.cons_lin(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
+    cx = VT(undef, get_nlin(mpcc))
+    return cons_lin!(mpcc, x, cx)
+end
+
+function NLPModels.cons_nln(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
+    cx = VT(undef, get_nnln(mpcc))
+    return cons_nln!(mpcc, x, cx)
+end
+
+function _map_rows!(rows::AbstractVector{<:Integer}, source_rows::AbstractVector{<:Integer})
+    @inbounds for i in eachindex(rows)
+        rows[i] = searchsortedfirst(source_rows, rows[i])
+    end
+    return rows
+end
+
+function _map_rows!(rows::AbstractVector{<:Integer}, row_map::Dict{Int,Int})
+    @inbounds for i in eachindex(rows)
+        rows[i] = row_map[rows[i]]
+    end
+    return rows
 end
 
 """
@@ -81,6 +120,7 @@ function NLPModels.jac_structure!(
         rows .= mpcc._i1[get_ind_j_triplets(mpcc)]
         cols .= mpcc._i2[get_ind_j_triplets(mpcc)]
     end
+    _map_rows!(rows, get_ind_c(mpcc))
     return rows, cols
 end
 
@@ -98,15 +138,12 @@ function NLPModels.jac_lin_structure!(
     rows::AbstractVector{<:Integer},
     cols::AbstractVector{<:Integer},
 )
-    _rows = view(mpcc._i1, 1:get_lin_nnzj(mpcc.nlp))
-    _cols = view(mpcc._i2, 1:get_lin_nnzj(mpcc.nlp))
-    jac_lin_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
+    jac_structure!(mpcc.nlp, mpcc._i1, mpcc._i2)
     @views begin
-        rows .= _rows[get_ind_j_lin_triplets(mpcc)]
-        cols .= _cols[get_ind_j_lin_triplets(mpcc)]
+        rows .= mpcc._i1[get_ind_j_lin_triplets(mpcc)]
+        cols .= mpcc._i2[get_ind_j_lin_triplets(mpcc)]
     end
-    # Convert row values adjusting for the number of linear complementarities
-    map!((x) -> get_ind_j_lin_row_map(mpcc)[x], rows, rows)
+    _map_rows!(rows, get_ind_j_lin_row_map(mpcc))
 
     return rows, cols
 end
@@ -116,17 +153,26 @@ function NLPModels.jac_nln_structure!(
     rows::AbstractVector{<:Integer},
     cols::AbstractVector{<:Integer},
 )
-    _rows = view(mpcc._i1, 1:get_nln_nnzj(mpcc.nlp))
-    _cols = view(mpcc._i2, 1:get_nln_nnzj(mpcc.nlp))
-    jac_nln_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
+    jac_structure!(mpcc.nlp, mpcc._i1, mpcc._i2)
     @views begin
-        rows .= _rows[get_ind_j_nln_triplets(mpcc)]
-        cols .= _cols[get_ind_j_nln_triplets(mpcc)]
+        rows .= mpcc._i1[get_ind_j_nln_triplets(mpcc)]
+        cols .= mpcc._i2[get_ind_j_nln_triplets(mpcc)]
     end
-    # Convert row values adjusting for the number of nonlinear complementarities
-    map!((x) -> get_ind_j_nln_row_map(mpcc)[x], rows, rows)
+    _map_rows!(rows, get_ind_j_nln_row_map(mpcc))
 
     return rows, cols
+end
+
+function NLPModels.jac_lin_structure(mpcc::AbstractMPCCModel)
+    rows = Vector{Int}(undef, get_lin_nnzj(mpcc))
+    cols = Vector{Int}(undef, get_lin_nnzj(mpcc))
+    return jac_lin_structure!(mpcc, rows, cols)
+end
+
+function NLPModels.jac_nln_structure(mpcc::AbstractMPCCModel)
+    rows = Vector{Int}(undef, get_nln_nnzj(mpcc))
+    cols = Vector{Int}(undef, get_nln_nnzj(mpcc))
+    return jac_nln_structure!(mpcc, rows, cols)
 end
 
 """
@@ -151,9 +197,8 @@ function NLPModels.jac_lin_coord!(
     x::AbstractVector,
     j::AbstractVector,
 )
-    _j = view(mpcc._j1, 1:get_lin_nnzj(mpcc.nlp))
-    jac_lin_coord!(mpcc.nlp, x, _j)
-    @views j .= _j[get_ind_j_lin_triplets(mpcc)]
+    jac_coord!(mpcc.nlp, x, mpcc._j1)
+    @views j .= mpcc._j1[get_ind_j_lin_triplets(mpcc)]
     return j
 end
 
@@ -162,10 +207,31 @@ function NLPModels.jac_nln_coord!(
     x::AbstractVector,
     j::AbstractVector,
 )
-    _j = view(mpcc._j1, 1:get_nln_nnzj(mpcc.nlp))
-    jac_lin_coord!(mpcc.nlp, x, _j)
-    @views j .= _j[get_ind_j_nln_triplets(mpcc)]
+    jac_coord!(mpcc.nlp, x, mpcc._j1)
+    @views j .= mpcc._j1[get_ind_j_nln_triplets(mpcc)]
     return j
+end
+
+function NLPModels.jac_lin_coord(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
+    vals = VT(undef, get_lin_nnzj(mpcc))
+    return jac_lin_coord!(mpcc, x, vals)
+end
+
+function NLPModels.jac_nln_coord(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
+    vals = VT(undef, get_nln_nnzj(mpcc))
+    return jac_nln_coord!(mpcc, x, vals)
+end
+
+function NLPModels.jac_lin(mpcc::AbstractMPCCModel, x::AbstractVector)
+    rows, cols = jac_lin_structure(mpcc)
+    vals = jac_lin_coord(mpcc, x)
+    return sparse(rows, cols, vals, get_nlin(mpcc), get_nvar(mpcc))
+end
+
+function NLPModels.jac_nln(mpcc::AbstractMPCCModel, x::AbstractVector)
+    rows, cols = jac_nln_structure(mpcc)
+    vals = jac_nln_coord(mpcc, x)
+    return sparse(rows, cols, vals, get_nnln(mpcc), get_nvar(mpcc))
 end
 
 function NLPModels.jprod!(
@@ -200,6 +266,21 @@ function NLPModels.jprod_nln!(
     return Jv
 end
 
+function NLPModels.jprod(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jv = VT(undef, get_ncon(mpcc))
+    return jprod!(mpcc, x, v, Jv)
+end
+
+function NLPModels.jprod_lin(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jv = VT(undef, get_nlin(mpcc))
+    return jprod_lin!(mpcc, x, v, Jv)
+end
+
+function NLPModels.jprod_nln(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jv = VT(undef, get_nnln(mpcc))
+    return jprod_nln!(mpcc, x, v, Jv)
+end
+
 function NLPModels.jtprod!(
     mpcc::AbstractMPCCModel,
     x::AbstractVector,
@@ -229,8 +310,23 @@ function NLPModels.jtprod_nln!(
     Jtv::AbstractVector,
 )
     # TODO(@anton) do this in a smarter way?
-    Jv[1:get_nvar(mpcc)] .= jac_nln(mpcc, x)' * v
+    Jtv[1:get_nvar(mpcc)] .= jac_nln(mpcc, x)' * v
     return Jtv
+end
+
+function NLPModels.jtprod(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jtv = VT(undef, get_nvar(mpcc))
+    return jtprod!(mpcc, x, v, Jtv)
+end
+
+function NLPModels.jtprod_lin(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jtv = VT(undef, get_nvar(mpcc))
+    return jtprod_lin!(mpcc, x, v, Jtv)
+end
+
+function NLPModels.jtprod_nln(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector, v::AbstractVector) where {T,VT}
+    Jtv = VT(undef, get_nvar(mpcc))
+    return jtprod_nln!(mpcc, x, v, Jtv)
 end
 
 """
@@ -354,6 +450,17 @@ function NLPModels.hprod!(
     return hprod!(mpcc.nlp, x, mpcc._c1, v, Hv; obj_weight = obj_weight)
 end
 
+function NLPModels.hprod(
+    mpcc::AbstractMPCCModel{T,VT},
+    x::AbstractVector{T},
+    y::AbstractVector{T},
+    v::AbstractVector{T};
+    obj_weight::Real = one(T),
+) where {T,VT}
+    Hv = VT(undef, get_nvar(mpcc))
+    return hprod!(mpcc, x, y, v, Hv; obj_weight = obj_weight)
+end
+
 """
   Evaluates G(x).
 """
@@ -372,22 +479,17 @@ function comp_left!(
 ) where {T,VT}
     @lencheck get_ncc(mpcc) ccx
     @lencheck get_nvar(mpcc) x
-    cvar = 0
-    vert = true
-    # First get variables:
-    for i in 1:get_ncc(mpcc)
-        if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
-            ccx[i] = x[get_ind_cc1(mpcc)[i]]
-            cvar += 1
-        else
-            vert = false
-        end
-    end
-    # TODO(@anton) this should be done via multiple dispatch probably
-    if !vert
-        # TODO(@anton) I am not sure anymore if this is correct for non-vertical form
+    types = get_cc_types(mpcc)
+    needs_constraints = any(t -> t in (ConVar, ConCon), types)
+    if needs_constraints
         cons!(mpcc.nlp, x, mpcc._c1)
-        @views ccx[(cvar+1):end] .= mpcc._c1[get_cc_l(mpcc)]
+    end
+    for i in 1:get_ncc(mpcc)
+        if types[i] in (VarVar, VarCon)
+            ccx[i] = x[get_ind_cc1(mpcc)[i]]
+        else
+            ccx[i] = mpcc._c1[get_ind_cc1(mpcc)[i]]
+        end
     end
     return ccx
 end
@@ -410,22 +512,17 @@ function comp_right!(
 ) where {T,VT}
     @lencheck get_ncc(mpcc) ccx
     @lencheck get_nvar(mpcc) x
-    cvar = 0
-    vert = true
-    # First get variables:
-    for i in 1:get_ncc(mpcc)
-        if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
-            ccx[i] = x[get_ind_cc2(mpcc)[i]]
-            cvar += 1
-        else
-            vert = false
-        end
-    end
-
-    if !vert
-        # TODO(@anton) I am not sure anymore if this is correct for non-vertical form
+    types = get_cc_types(mpcc)
+    needs_constraints = any(t -> t in (VarCon, ConCon), types)
+    if needs_constraints
         cons!(mpcc.nlp, x, mpcc._c1)
-        @views ccx[(cvar+1):end] .= mpcc._c1[get_cc_r(mpcc)]
+    end
+    for i in 1:get_ncc(mpcc)
+        if types[i] in (VarVar, ConVar)
+            ccx[i] = x[get_ind_cc2(mpcc)[i]]
+        else
+            ccx[i] = mpcc._c1[get_ind_cc2(mpcc)[i]]
+        end
     end
     return ccx
 end
@@ -590,20 +687,14 @@ function jac_comp_left_structure!(
     rows::AbstractVector{<:Integer},
     cols::AbstractVector{<:Integer},
 )
-    _rows = mpcc._i1
     _cols = mpcc._i2
-    jac_lin_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
+    jac_structure!(mpcc.nlp, mpcc._i1, _cols)
 
     @views begin
         rows[1:length(get_ind_j_comp_left_triplets(mpcc))] .=
-            _rows[get_ind_j_comp_left_triplets(mpcc)]
+            get_ind_j_comp_left_rows(mpcc)
         cols[1:length(get_ind_j_comp_left_triplets(mpcc))] .=
             _cols[get_ind_j_comp_left_triplets(mpcc)]
-        map!(
-            x -> get_ind_j_comp_left_row_map(mpcc)[x],
-            rows[1:length(get_ind_j_comp_left_triplets(mpcc))],
-            rows[1:length(get_ind_j_comp_left_triplets(mpcc))],
-        )
     end
 
     i_var_comp = length(get_ind_j_comp_left_triplets(mpcc)) + 1
@@ -636,21 +727,14 @@ function jac_comp_right_structure!(
     rows::AbstractVector{<:Integer},
     cols::AbstractVector{<:Integer},
 )
-    _rows = mpcc._i1
     _cols = mpcc._i2
-    jac_lin_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
+    jac_structure!(mpcc.nlp, mpcc._i1, _cols)
 
     @views begin
         rows[1:length(get_ind_j_comp_right_triplets(mpcc))] .=
-            _rows[get_ind_j_comp_right_triplets(mpcc)]
+            get_ind_j_comp_right_rows(mpcc)
         cols[1:length(get_ind_j_comp_right_triplets(mpcc))] .=
             _cols[get_ind_j_comp_right_triplets(mpcc)]
-
-        map!(
-            x -> get_ind_j_comp_right_row_map(mpcc)[x],
-            rows[1:length(get_ind_j_comp_right_triplets(mpcc))],
-            rows[1:length(get_ind_j_comp_right_triplets(mpcc))],
-        )
     end
 
     i_var_comp = length(get_ind_j_comp_right_triplets(mpcc)) + 1
@@ -703,7 +787,7 @@ end
   Evaluates COO values of ``\\nabla H(x)``.
 """
 function jac_comp_right_coord(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
-    vals = VT(undef, get_comp_left_nnzj(mpcc))
+    vals = VT(undef, get_comp_right_nnzj(mpcc))
 
     return jac_comp_right_coord!(mpcc, x, vals)
 end
@@ -734,7 +818,7 @@ function jac_comp_right_coord!(
 end
 
 """
-  Evaluates ``\\vert\\min(G(x)-\\ell_G,H(x)-\\ell_H)\\vert_\\infty``.
+  Evaluates ``\\vert\\min(G(x)-\\ell^G,H(x)-\\ell^H,0.0)\vert_\\infty``.
 """
 function comp_residual(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {T,VT}
     # TODO(@anton): This can be done more efficiently in vertical form
@@ -743,12 +827,12 @@ function comp_residual(mpcc::AbstractMPCCModel{T,VT}, x::AbstractVector) where {
     comp_res_left!(mpcc, x, G)
     comp_res_right!(mpcc, x, H)
 
-    map!(min, G, G, H)
-    return maximum(G)
+    G .= min.(G, H, 0.0)
+    return norm(G, Inf)
 end
 
 """
-  Evaluates ``\\vert (G(x)-\\ell_G)\\odot(H(x)-\\ell_H)\\vert_\\infty``.
+  Evaluates ``\\vert (G(x)-\\ell^G)\\odot(H(x)-\\ell^H)\vert_\\infty``.
 """
 function comp_residual_product(
     mpcc::AbstractMPCCModel{T,VT},
@@ -761,7 +845,7 @@ function comp_residual_product(
     comp_res_right!(mpcc, x, H)
 
     G .*= H
-    return maximum(G)
+    return norm(G, Inf)
 end
 
 """
