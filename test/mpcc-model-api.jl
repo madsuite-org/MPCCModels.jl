@@ -1,4 +1,50 @@
 @testset "MPCCModel Tests" begin
+    @testset "VarVar complementarity Jacobians with mixed constraints" for T in (
+        Float64,
+        Float32,
+    )
+        f(x) = sum(abs2, x)
+        c(x) = [x[1]^2 + x[3]]
+        nlp = ADNLPModel(
+            f,
+            ones(T, 3),
+            zeros(T, 3),
+            fill(T(Inf), 3),
+            [1, 1],
+            [1, 2],
+            T[1, 2],
+            c,
+            T[0, 0],
+            T[0, Inf],
+        )
+        mpcc = MPCCModel(nlp, [1], [3])
+        x = get_x0(mpcc)
+        @test get_lin_nnzj(nlp) != get_nnzj(nlp)
+        @test jac_comp_left_structure(mpcc) == ([1], [1])
+        @test jac_comp_right_structure(mpcc) == ([1], [3])
+        @test jac_comp_left(mpcc, x) ≈ T[1 0 0]
+        @test jac_comp_right(mpcc, x) ≈ T[0 0 1]
+        linear = zeros(T, 1)
+        nonlinear = zeros(T, 1)
+        cons_lin!(mpcc, x, linear)
+        cons_nln!(mpcc, x, nonlinear)
+        @test linear ≈ cons(mpcc, x)[get_lin(mpcc)]
+        @test nonlinear ≈ cons(mpcc, x)[get_nln(mpcc)]
+        @test jac_lin(mpcc, x) ≈ jac(mpcc, x)[get_lin(mpcc), :]
+        @test jac_nln(mpcc, x) ≈ jac(mpcc, x)[get_nln(mpcc), :]
+        v = T[0.2, -0.4, 0.7]
+        w = T[0.3]
+        for (jv!, jtv!, J) in (
+            (jprod_lin!, jtprod_lin!, jac_lin(mpcc, x)),
+            (jprod_nln!, jtprod_nln!, jac_nln(mpcc, x)),
+        )
+            Jv = zeros(T, 1)
+            Jtw = zeros(T, 3)
+            @test jv!(mpcc, x, v, Jv) ≈ J * v
+            @test jtv!(mpcc, x, w, Jtw) ≈ J' * w
+        end
+    end
+
     @testset "VarVar API" for T in [Float64, Float32]
         f(x) = (x[1] - 1)^2 + (x[2] - 1)^2
         ∇f(x) = T[2 * (x[1] - 1); 2 * (x[2] - 1)]

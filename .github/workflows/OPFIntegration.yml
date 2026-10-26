@@ -1,0 +1,63 @@
+name: OPF integration
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 17 * * 0'
+concurrency:
+  # Reusable calls must not share the caller CI workflow's concurrency group.
+  group: opf-integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  opf-examples:
+    name: Solved OPF regime coverage - Julia 1.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - name: Install example dependencies against this checkout
+        run: julia --project=examples/opf -e 'using Pkg; Pkg.develop(path=pwd()); Pkg.instantiate()'
+      - name: Verify original feasibility and achieved controller regimes
+        run: julia --project=examples/opf examples/opf/test-solves.jl
+  pglib-exhaustive:
+    name: Exhaustive OPF evidence and solver integration - Julia 1.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - name: Install optional transmission example dependencies
+        run: julia --project=examples/opf/pglib -e 'using Pkg; Pkg.develop(path=pwd()); Pkg.instantiate()'
+      - name: Verify lossless archives and compact fixture derivation
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-evidence.jl
+      - name: Check import, physics, derivatives and target validation
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-model.jl
+      - name: Cross-check canonical baselines against PowerModels
+        run: julia --project=examples/opf/pglib examples/opf/pglib/validate-baselines.jl
+      - name: Verify solved regimes, bound activity and limit perturbations
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-solves.jl
+      - name: Verify placement, population and isolated network sensitivities
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-studies.jl
+      - name: Verify hard-case recorder and archived numerical witness
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-hard-search.jl
+      - name: Verify shared-hinge equivalence, reduction witnesses and traces
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-reductions.jl
+      - name: Verify application families, matched policies and physical coverage
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-applications.jl
+      - name: Verify application regime coverage and fixed-total fleet invariants
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-expansions.jl
+      - name: Verify IEEE 300 applications, derivatives and archived evidence
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-ieee300.jl
+      - name: Verify IEEE 300 policy regimes, one-sided reserve and numerical evidence
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-policy-matrix.jl
+      - name: Verify independent operating axes, physics and derivatives
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-operating-model.jl
+      - name: Verify operating census, compact selection, original points and recorder
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-operating-evidence.jl

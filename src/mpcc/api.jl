@@ -55,7 +55,7 @@ end
 function NLPModels.cons_nln!(mpcc::AbstractMPCCModel, x::AbstractVector, cx::AbstractVector)
     _c_nln = view(mpcc._c1, 1:get_nnln(mpcc.nlp))
     cons_nln!(mpcc.nlp, x, _c_nln)
-    @views cx .= _c_lin[get_c_nln(mpcc)]
+    @views cx .= _c_nln[get_c_nln(mpcc)]
     return cx
 end
 
@@ -66,6 +66,24 @@ function NLPModels.jac(mpcc::AbstractMPCCModel, x::AbstractVector)
     I, J = jac_structure(mpcc)
     V = jac_coord(mpcc, x)
     return sparse(I, J, V, get_ncon(mpcc), get_nvar(mpcc))
+end
+
+function NLPModels.jac_lin(mpcc::AbstractMPCCModel{T}, x::AbstractVector) where {T}
+    rows = Vector{Int}(undef, get_lin_nnzj(mpcc))
+    cols = similar(rows)
+    vals = Vector{T}(undef, length(rows))
+    jac_lin_structure!(mpcc, rows, cols)
+    jac_lin_coord!(mpcc, x, vals)
+    return sparse(rows, cols, vals, get_nlin(mpcc), get_nvar(mpcc))
+end
+
+function NLPModels.jac_nln(mpcc::AbstractMPCCModel{T}, x::AbstractVector) where {T}
+    rows = Vector{Int}(undef, get_nln_nnzj(mpcc))
+    cols = similar(rows)
+    vals = Vector{T}(undef, length(rows))
+    jac_nln_structure!(mpcc, rows, cols)
+    jac_nln_coord!(mpcc, x, vals)
+    return sparse(rows, cols, vals, get_nnln(mpcc), get_nvar(mpcc))
 end
 
 """
@@ -163,7 +181,7 @@ function NLPModels.jac_nln_coord!(
     j::AbstractVector,
 )
     _j = view(mpcc._j1, 1:get_nln_nnzj(mpcc.nlp))
-    jac_lin_coord!(mpcc.nlp, x, _j)
+    jac_nln_coord!(mpcc.nlp, x, _j)
     @views j .= _j[get_ind_j_nln_triplets(mpcc)]
     return j
 end
@@ -229,7 +247,7 @@ function NLPModels.jtprod_nln!(
     Jtv::AbstractVector,
 )
     # TODO(@anton) do this in a smarter way?
-    Jv[1:get_nvar(mpcc)] .= jac_nln(mpcc, x)' * v
+    Jtv[1:get_nvar(mpcc)] .= jac_nln(mpcc, x)' * v
     return Jtv
 end
 
@@ -592,7 +610,7 @@ function jac_comp_left_structure!(
 )
     _rows = mpcc._i1
     _cols = mpcc._i2
-    jac_lin_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
+    jac_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
 
     @views begin
         rows[1:length(get_ind_j_comp_left_triplets(mpcc))] .=
@@ -610,7 +628,7 @@ function jac_comp_left_structure!(
     # TODO(@anton) maybe vectorize
     for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
-            rows[i_var_comp] = i;
+            rows[i_var_comp] = i
             cols[i_var_comp] = get_ind_cc1(mpcc)[i]
             i_var_comp += 1
         end
@@ -638,7 +656,7 @@ function jac_comp_right_structure!(
 )
     _rows = mpcc._i1
     _cols = mpcc._i2
-    jac_lin_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
+    jac_structure!(mpcc.nlp, _rows, _cols) # get including complementarities
 
     @views begin
         rows[1:length(get_ind_j_comp_right_triplets(mpcc))] .=
@@ -657,7 +675,7 @@ function jac_comp_right_structure!(
     # TODO(@anton) maybe vectorize
     for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
-            rows[i_var_comp] = i;
+            rows[i_var_comp] = i
             cols[i_var_comp] = get_ind_cc2(mpcc)[i]
             i_var_comp += 1
         end
@@ -692,7 +710,7 @@ function jac_comp_left_coord!(
     # TODO(@anton) maybe vectorize
     for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, VarCon]
-            vals[i_var_comp] = 1.0;
+            vals[i_var_comp] = 1.0
             i_var_comp += 1
         end
     end
@@ -726,7 +744,7 @@ function jac_comp_right_coord!(
     # TODO(@anton) maybe vectorize
     for i in 1:get_ncc(mpcc)
         if get_cc_types(mpcc)[i] ∈ [VarVar, ConVar]
-            vals[i_var_comp] = 1.0;
+            vals[i_var_comp] = 1.0
             i_var_comp += 1
         end
     end

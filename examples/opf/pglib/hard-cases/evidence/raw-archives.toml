@@ -1,0 +1,62 @@
+schema = 1
+description = "Complete local raw evidence; not yet uploaded as public release assets."
+
+[archives."ieee118-application-sensitivities-2026-10-25.tar.gz"]
+bytes = 259074
+sha256 = "da22d3ed8d8e6456755296a552ebd0b36daae4bb268e71bdb223454681a0ace3"
+
+[archives."ieee118-applications-2026-10-25.tar.gz"]
+bytes = 1436652
+sha256 = "fc6e7fc25db7b14d169756652b8fe2b2b3f9b323b16b305aad46953ddfea24ff"
+
+[archives."ieee118-capability-2026-10-24.tar.gz"]
+bytes = 2024704
+sha256 = "c7bbaf39d5b58427720204a30825ced68e24c8cba31ad708701a63b89ecf92e8"
+
+[archives."ieee118-coverage-2026-10-25.tar.gz"]
+bytes = 1843777
+sha256 = "8ca51806b0b0c83faa068126fcbc7c1be44f91fd2065e094863059e30817be37"
+
+[archives."ieee118-fleets-2026-10-25.tar.gz"]
+bytes = 1321062
+sha256 = "f98c1b13c75d4a210b95a50a6328adc8f99e49411f53fadb73823d6fecfcb164"
+
+[archives."ieee118-reduction-seeds-2026-10-25.tar.gz"]
+bytes = 933926
+sha256 = "0ba001433684b3cf24ac2d175ddd608558ad1226f1f166b206a4dfe1237c4e0b"
+
+[archives."ieee118-reductions-2026-10-25.tar.gz"]
+bytes = 775531
+sha256 = "d1e68a14d76c1c02a1afae24e26a8d6c46a0169d12e57ea9d4f65e7b448f7387"
+
+[archives."ieee118-transitions-2026-10-24.tar.gz"]
+bytes = 1045552
+sha256 = "56d834e6c5e6a12737aa7665a11f77fa662b2800d8eff7f7fcd5f334b35b7d41"
+
+[archives."ieee300-applications-2026-10-25.tar.gz"]
+bytes = 1548933
+sha256 = "1d423d3b080d7a842013145c4a6db61f979cec3a74e7fe6f27194a5a7cbaa951"
+
+[archives."ieee300-canonical-validation-2026-10-25.tar.gz"]
+bytes = 144278
+sha256 = "0f369a59cb9b0a2c70980eb25b0000250415fff6f814e6d317fe018e8c55e504"
+
+[archives."ieee300-exploratory-2026-10-25.tar.gz"]
+bytes = 404281
+sha256 = "8ee29436d5054e76e59d455d7a02b48f181868c612f25dbb7d6584470e474749"
+
+[archives."ieee300-limit-sensitivities-2026-10-25.tar.gz"]
+bytes = 269339
+sha256 = "914102276fcd95db8e80a6c72eb15f8b974bdc34c42683b222d396a09bbdeeea"
+
+[archives."ieee300-policy-matrix-2026-10-25.tar.gz"]
+bytes = 2638730
+sha256 = "4646aee659c03d66e0684e9fbd58d6c8e358bc0592bbb713a543f81b101472a6"
+
+[archives."ieee300-policy-references-2026-10-25.tar.gz"]
+bytes = 1902029
+sha256 = "1f81e43b59614ab20dac264b54494382cd1288d0d86646f4d936d0dcd3b1780b"
+
+[archives."operating-conditions-2026-10-26.tar.gz"]
+bytes = 6936206
+sha256 = "b893495635e84c87a958e05c018ebbc349a7cd286e080a30804aeff21216f687"

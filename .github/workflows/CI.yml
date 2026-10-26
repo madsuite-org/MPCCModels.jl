@@ -6,6 +6,11 @@ on:
     tags: ['*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      full_opf:
+        description: Run exhaustive OPF solver and evidence integration
+        type: boolean
+        default: false
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
@@ -39,3 +44,23 @@ jobs:
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+  pglib-examples:
+    name: OPF models and archived physical witnesses - Julia 1.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - name: Install optional transmission example dependencies
+        run: julia --project=examples/opf/pglib -e 'using Pkg; Pkg.develop(path=pwd()); Pkg.instantiate()'
+      - name: Verify import, physics, derivatives and input validation
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-model.jl
+      - name: Verify compact physical witnesses and reporting without optimizer calls
+        run: julia --project=examples/opf/pglib examples/opf/pglib/test-fast.jl
+  opf-integration:
+    name: Requested exhaustive OPF integration
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_opf }}
+    uses: ./.github/workflows/OPFIntegration.yml

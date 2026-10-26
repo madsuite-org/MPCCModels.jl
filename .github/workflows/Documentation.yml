@@ -31,3 +31,5 @@ jobs:
         run: julia --color=yes --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check local file and fragment links
+        run: python3 docs/check-local-links.py docs/build

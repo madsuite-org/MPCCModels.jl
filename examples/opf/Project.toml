@@ -1,0 +1,12 @@
+[deps]
+ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
+CCOpt = "6689419a-93c1-455a-8ac6-77991ec4f86b"
+MPCCModels = "cbaba3ef-cedb-4e5a-9903-71bbac24a74a"
+NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
+
+[compat]
+ADNLPModels = "0.8"
+CCOpt = "0.1"
+MPCCModels = "0.1"
+NLPModels = "0.21.12"
+julia = "1.10"
