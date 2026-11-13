@@ -35,3 +35,8 @@ nlp = create_your_nlp_model()
 mpcc = MPCCModel(nlp, ind_cc1, ind_cc1, cctypes)
 vertical_mpcc = vertical_form(mpcc)
 ```
+
+## Optional application examples
+
+[Fixed-droop AC OPF](examples/droop/README.md) provides three cases with exact
+voltage deadbands and reactive saturation, independent replay and opt-in solver runs.

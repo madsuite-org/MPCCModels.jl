@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "source_campaign": "deadband_s1_s2_20261026",
+  "source_campaign_status": "running (snapshot, not sealed final evidence)",
+  "cases": {
+    "zero": {
+      "half_width": 0.0,
+      "reference_solver": "ccopt",
+      "reference_objective_pu": 0.17581867747297508,
+      "historical_attempts": [
+        {
+          "name": "s1-500-w0p0-fixed-f1.0-ipopt",
+          "solver": "ipopt",
+          "status": "LOCALLY_SOLVED",
+          "accepted": true,
+          "physical_valid": true,
+          "native_success": true,
+          "solve_seconds": 2.574283917,
+          "iterations_budget": 2000,
+          "seconds_budget": 60.0,
+          "initial_source": "common historical numerical seed",
+          "variables": 1180,
+          "constraints": 5111,
+          "complementarity_max": null,
+          "optimizer_options": {
+            "bound_relax_factor": "0.0",
+            "max_cpu_time": "60.0",
+            "max_iter": "2000",
+            "mu_strategy": "adaptive",
+            "print_level": "0",
+            "tol": "1.0e-9"
+          },
+          "source_sha256": "3372f314762d762f8ca60ef1bfbb0363d1dd813fe805701107e0a203c49e8013"
+        },
+        {
+          "name": "s1-500-w0p0-fixed-f1.0-ccopt",
+          "solver": "ccopt",
+          "status": "LOCALLY_SOLVED",
+          "accepted": true,
+          "physical_valid": true,
+          "native_success": true,
+          "solve_seconds": 0.620673334,
+          "iterations_budget": 2000,
+          "seconds_budget": 60.0,
+          "initial_source": "common historical numerical seed",
+          "variables": 1435,
+          "constraints": 5570,
+          "complementarity_max": 4.932851664025884e-13,
+          "optimizer_options": {
+            "acceptable_tol": "1.0e-11",
+            "barrier": "MadNLP.MonotoneUpdate{Float64}(1.0e-6, 9.09090909090909e-13, 1.5, 0.2)",
+            "bound_fac": "1.0e-8",
+            "bound_push": "1.0e-8",
+            "bound_relax_factor": "0.0",
+            "max_iter": "2000",
+            "max_wall_time": "60.0",
+            "relaxation_update": "CCOpt.ProportionalRelaxationUpdate{Float64}(1.0, 1.0, false, 1.0e-14)",
+            "tol": "1.0e-11"
+          },
+          "source_sha256": "53f07dd5f8e66d524e367566c11d3772173a7efd0b07ae12021bfd5fcc7cb051"
+        }
+      ]
+    },
+    "narrow": {
+      "half_width": 0.004999999999999893,
+      "reference_solver": "ipopt",
+      "reference_objective_pu": 0.24037776108183562,
+      "historical_attempts": [
+        {
+          "name": "s1-500-w0p005-fixed-f1.0-ipopt",
+          "solver": "ipopt",
+          "status": "LOCALLY_SOLVED",
+          "accepted": true,
+          "physical_valid": true,
+          "native_success": true,
+          "solve_seconds": 2.955435708,
+          "iterations_budget": 2000,
+          "seconds_budget": 60.0,
+          "initial_source": "common historical numerical seed",
+          "variables": 1180,
+          "constraints": 5111,
+          "complementarity_max": null,
+          "optimizer_options": {
+            "bound_relax_factor": "0.0",
+            "max_cpu_time": "60.0",
+            "max_iter": "2000",
+            "mu_strategy": "adaptive",
+            "print_level": "0",
+            "tol": "1.0e-9"
+          },
+          "source_sha256": "1bbf64b0bdc88cd74400276437f350b9dc0720fd6833ec92808b80710a4e843d"
+        },
+        {
+          "name": "s1-500-w0p005-fixed-f1.0-ccopt",
+          "solver": "ccopt",
+          "status": "TIME_LIMIT",
+          "accepted": false,
+          "physical_valid": false,
+          "native_success": false,
+          "solve_seconds": 60.086450042,
+          "iterations_budget": 2000,
+          "seconds_budget": 60.0,
+          "initial_source": "common historical numerical seed",
+          "variables": 1639,
+          "constraints": 5978,
+          "complementarity_max": 2.558012583563424e-09,
+          "optimizer_options": {
+            "acceptable_tol": "1.0e-11",
+            "barrier": "MadNLP.MonotoneUpdate{Float64}(1.0e-6, 9.09090909090909e-13, 1.5, 0.2)",
+            "bound_fac": "1.0e-8",
+            "bound_push": "1.0e-8",
+            "bound_relax_factor": "0.0",
+            "max_iter": "2000",
+            "max_wall_time": "60.0",
+            "relaxation_update": "CCOpt.ProportionalRelaxationUpdate{Float64}(1.0, 1.0, false, 1.0e-14)",
+            "tol": "1.0e-11"
+          },
+          "source_sha256": "22a122d106f43b96da7a6d192fa1e8e238da116c6aa26bf44ce3c532c5d23f05"
+        },
+        {
+          "name": "s1-500-w0p005-fixed-f1.0-ccopt-retry",
+          "solver": "ccopt",
+          "status": "TIME_LIMIT",
+          "accepted": false,
+          "physical_valid": false,
+          "native_success": false,
+          "solve_seconds": 180.075071,
+          "iterations_budget": 6000,
+          "seconds_budget": 180.0,
+          "initial_source": "s1-500-w0p005-fixed-f1.0-ipopt",
+          "variables": 1639,
+          "constraints": 5978,
+          "complementarity_max": 1.77171328168637e-06,
+          "optimizer_options": {
+            "acceptable_tol": "1.0e-11",
+            "barrier": "MadNLP.MonotoneUpdate{Float64}(1.0e-6, 9.09090909090909e-13, 1.5, 0.2)",
+            "bound_fac": "1.0e-8",
+            "bound_push": "1.0e-8",
+            "bound_relax_factor": "0.0",
+            "max_iter": "6000",
+            "max_wall_time": "180.0",
+            "relaxation_update": "CCOpt.ScheduledRelaxationUpdate{Float64}(0.001, 1.0e-11, 0.0001, 0.1, 1.9, 1.0e-6, 1.0e-14)",
+            "tol": "1.0e-11"
+          },
+          "source_sha256": "dd122e0e4e25f0c4cc368490c4ab2424106d52b73ab814f4de339897df645554"
+        }
+      ]
+    },
+    "wide": {
+      "half_width": 0.010000000000000009,
+      "reference_solver": "ipopt",
+      "reference_objective_pu": 0.33687625539446564,
+      "historical_attempts": [
+        {
+          "name": "s1-500-w0p01-fixed-f1.0-ipopt",
+          "solver": "ipopt",
+          "status": "LOCALLY_SOLVED",
+          "accepted": true,
+          "physical_valid": true,
+          "native_success": true,
+          "solve_seconds": 3.450296333,
+          "iterations_budget": 2000,
+          "seconds_budget": 60.0,
+          "initial_source": "common historical numerical seed",
+          "variables": 1180,
+          "constraints": 5111,
+          "complementarity_max": null,
+          "optimizer_options": {
+            "bound_relax_factor": "0.0",
+            "max_cpu_time": "60.0",
+            "max_iter": "2000",
+            "mu_strategy": "adaptive",
+            "print_level": "0",
+            "tol": "1.0e-9"
+          },
+          "source_sha256": "8f77311b9315424dc7aabbed66c6c0f909054b8a41d3221bc95185036d82f769"
+        },
+        {
+          "name": "s1-500-w0p01-fixed-f1.0-ccopt",
+          "solver": "ccopt",
+          "status": "TIME_LIMIT",
+          "accepted": false,
+          "physical_valid": false,
+          "native_success": false,
+          "solve_seconds": 60.110818459,
+          "iterations_budget": 2000,
+          "seconds_budget": 60.0,
+          "initial_source": "common historical numerical seed",
+          "variables": 1639,
+          "constraints": 5978,
+          "complementarity_max": 5.225397414183656e-10,
+          "optimizer_options": {
+            "acceptable_tol": "1.0e-11",
+            "barrier": "MadNLP.MonotoneUpdate{Float64}(1.0e-6, 9.09090909090909e-13, 1.5, 0.2)",
+            "bound_fac": "1.0e-8",
+            "bound_push": "1.0e-8",
+            "bound_relax_factor": "0.0",
+            "max_iter": "2000",
+            "max_wall_time": "60.0",
+            "relaxation_update": "CCOpt.ProportionalRelaxationUpdate{Float64}(1.0, 1.0, false, 1.0e-14)",
+            "tol": "1.0e-11"
+          },
+          "source_sha256": "15aee67cbff5e0fb19bd342153b6ebe20dbb931fcc3d4f909d4b46d96d8723b4"
+        },
+        {
+          "name": "s1-500-w0p01-fixed-f1.0-ccopt-retry",
+          "solver": "ccopt",
+          "status": "TIME_LIMIT",
+          "accepted": false,
+          "physical_valid": false,
+          "native_success": false,
+          "solve_seconds": 180.11311325,
+          "iterations_budget": 6000,
+          "seconds_budget": 180.0,
+          "initial_source": "s1-500-w0p01-fixed-f1.0-ipopt",
+          "variables": 1639,
+          "constraints": 5978,
+          "complementarity_max": 5.748610790664847e-08,
+          "optimizer_options": {
+            "acceptable_tol": "1.0e-11",
+            "barrier": "MadNLP.MonotoneUpdate{Float64}(1.0e-6, 9.09090909090909e-13, 1.5, 0.2)",
+            "bound_fac": "1.0e-8",
+            "bound_push": "1.0e-8",
+            "bound_relax_factor": "0.0",
+            "max_iter": "6000",
+            "max_wall_time": "180.0",
+            "relaxation_update": "CCOpt.ScheduledRelaxationUpdate{Float64}(0.001, 1.0e-11, 0.0001, 0.1, 1.9, 1.0e-6, 1.0e-14)",
+            "tol": "1.0e-11"
+          },
+          "source_sha256": "ce6987b8e8e6cf51bb5d9fb80cb7b736db2ca97fbd592b4b3c2e1257088849ae"
+        }
+      ]
+    }
+  },
+  "source_notice": "Derived from ARPA-E GOC C1 Network Model 01 Scenario 02 via LANL-ANSI PowerModelsSecurityConstrained.jl and DroopOPF.jl. Pmin=0, symmetric Q limits, calibrated fixed equipment and generic static droop are study variants."
+}
