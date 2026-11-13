@@ -16,6 +16,9 @@ makedocs(
     "API" => "api.md",
     "Reference" => "reference.md",
   ],
+  linkcheck_ignore = [
+      "https://opensource.org/license/mit" # Fails for some unknown reason making docs build red.
+  ],
 )
 
 deploydocs(
