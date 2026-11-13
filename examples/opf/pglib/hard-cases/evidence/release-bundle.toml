@@ -1,0 +1,6 @@
+schema = 1
+file = "pr-evidence-2026-10-26.tar"
+bytes = 26745344
+sha256 = "dc60e58b6230c9b3d55bbf041b41ea9fd8fded8b96eed921476532692837a4ac"
+location = "examples/opf/pglib/search-results/"
+published = false

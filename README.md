@@ -35,3 +35,14 @@ nlp = create_your_nlp_model()
 mpcc = MPCCModel(nlp, ind_cc1, ind_cc1, cctypes)
 vertical_mpcc = vertical_form(mpcc)
 ```
+
+## Examples
+
+The [balanced AC OPF example](examples/opf/README.md) models volt-var and
+volt-watt controls using exact complementarity hinges. It includes 37 single- and
+multiple-controller cases, explicit network data, feasible reference points,
+and an optional CCOpt integration test that checks achieved operating regimes.
+
+The optional [PGLib transmission suite](examples/opf/pglib/README.md) adds 22
+IEEE 14/118 benchmark variants with canonical AC OPF baselines, three-inverter
+VV/VW overlays, solved bound/curve coverage, and limit-sensitivity checks.

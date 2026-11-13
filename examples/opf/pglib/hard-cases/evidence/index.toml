@@ -1,0 +1,58 @@
+schema = 1
+description = "Lossless historical receipts; SHA-256 covers both compressed and original bytes."
+
+[receipts."ieee118-applications.toml"]
+file = "ieee118-applications.toml.gz"
+bytes = 713089
+sha256 = "67ca7261f4459bf4bce1d3fb66920ad0e97554b31a034ce12bbb34483ae1ea2c"
+compressed_bytes = 173763
+compressed_sha256 = "d2edcdaeacba6c8d400eef9dd76398cafa7e5db0a5e4f10d94810d8dba799f5d"
+
+[receipts."ieee118-capability-082.toml"]
+file = "ieee118-capability-082.toml.gz"
+bytes = 86101
+sha256 = "57a17f35a78ffaaf28d0614e2720c2acc614477f102ad4aafbea0625daa309ba"
+compressed_bytes = 25501
+compressed_sha256 = "e285f2a26e634e6f7352ab495ec4d7c05d2f1a8f596608146ca5132a09d142b3"
+
+[receipts."ieee118-expansions.toml"]
+file = "ieee118-expansions.toml.gz"
+bytes = 1263005
+sha256 = "8d1e8519da174c76feef8750630b294cd1967d42f1f0eef6c8d1c46929325c5a"
+compressed_bytes = 344661
+compressed_sha256 = "e388812cbe760a0f7ee77e265c1c907fe2d448c04270e6457105cf09344432af"
+
+[receipts."ieee118-reductions.toml"]
+file = "ieee118-reductions.toml.gz"
+bytes = 380157
+sha256 = "b8f75eec17b87a3c2ad2a3cc1a3ef6e2332a45d43e0a95e3037667903477840b"
+compressed_bytes = 58102
+compressed_sha256 = "b5f940040dea90452a98b60456239b65d942ecd907fec456fd4f4e1b51bf7e2a"
+
+[receipts."ieee118-transitions-q45.toml"]
+file = "ieee118-transitions-q45.toml.gz"
+bytes = 351217
+sha256 = "4cb5072236bb5b96c244e111ffd75ae45472b689ece2ff94977a43806023c640"
+compressed_bytes = 90429
+compressed_sha256 = "258af9c7a3d4603e59948424cf524b7970ab289902fdd85b484e9a8e36b2b595"
+
+[receipts."ieee300-applications.toml"]
+file = "ieee300-applications.toml.gz"
+bytes = 2885818
+sha256 = "b6a330a44bcc6847ca87356ca597a14ad088ed7c7635566e085bc943f14697d7"
+compressed_bytes = 893179
+compressed_sha256 = "bce8512636487cc60b96ea0657a6d767d9e808bd9530b812557dc69b200ec06a"
+
+[receipts."ieee300-policy-matrix.toml"]
+file = "ieee300-policy-matrix.toml.gz"
+bytes = 3304357
+sha256 = "77284ee55edfabff3b040a35ee25a5bf3ac60b0a8c770e13a9ba96ea34b11901"
+compressed_bytes = 1062999
+compressed_sha256 = "0127774bc3f59fbbea316a82e33639c458c4dd7f6c3f79ba780b94bc6439a7c0"
+
+[receipts."operating-conditions.toml"]
+file = "operating-conditions.toml.gz"
+bytes = 1801826
+sha256 = "728ecf458c39677a4d88a08a93d48db7170851e0c66f4940290bb8ac935a50ca"
+compressed_bytes = 586095
+compressed_sha256 = "55462095d9fb2a0a947c8f2f2598acc99e1b8ebd6ea66534ff1b5cad278c37bb"
