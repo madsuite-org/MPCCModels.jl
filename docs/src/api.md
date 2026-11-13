@@ -32,6 +32,12 @@ Which of these vectors are the target of the indexing is determined by the value
 | `ConCon`    | ``g_i(x)`` | ``g_j(x)`` | ``\ell^g_i`` | ``\ell^g_j`` |
 
 This allows the user maximum flexibility when it comes to modelling the original MPCC.
+Any constraint row used on either side of a complementarity pair must have a
+finite lower bound and an upper bound of ``+\infty``. Its lower bound is used
+as the corresponding complementarity lower bound, and the row is removed from
+the ordinary constraint list. The constructor throws an `ArgumentError` if a
+selected row does not meet these bound requirements.
+
 For practical algorithms however, we reformulate the problem into the so called "vertical form":
 ```math
 \begin{aligned}
@@ -56,7 +62,7 @@ In order to develop algorithms for solving MPCCs we define the following API for
 | ``H(x)``                                              | [`comp_right`](@ref)                                                  |                                               |
 | ``H(x)-\ell^H``                                       | [`comp_res_right`](@ref)                                              | Right hand side complementarity residual      |
 | ``\nabla_x G(x)``                                     | [`jac_comp_right_structure`](@ref) and [`jac_comp_right_coord`](@ref) | Jacobian of left hand side of complementarity |
-| ``\vert\min(G(x)-\ell^G,H(x)-\ell^H)\vert_\infty``    | [`comp_residual`](@ref)                                               |                                               |
+| ``\vert\min(G(x)-\ell^G,H(x)-\ell^H,0)\vert_\infty``    | [`comp_residual`](@ref)                                               |                                               |
 | ``\vert (G(x)-\ell^G)\odot(H(x)-\ell^H)\vert_\infty`` | [`comp_residual_product`](@ref)                                       |                                               |
 | ``(G(x)-\ell^G)\cdot(H(x)-\ell^H)``                    | [`comp_residual_sum`](@ref)                                           |                                               |
 

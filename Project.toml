@@ -1,6 +1,6 @@
 name = "MPCCModels"
 uuid = "cbaba3ef-cedb-4e5a-9903-71bbac24a74a"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
         "Anton E. Pozharskiy <anton@pozhar.ski>",
         "François Pacaud Pacaud <francoispacaud8@gmail.com>",
